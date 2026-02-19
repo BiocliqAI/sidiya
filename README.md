@@ -97,3 +97,5 @@ Recommended service account roles:
 - `roles/cloudbuild.builds.editor`
 - `roles/artifactregistry.writer`
 - `roles/firebasehosting.admin`
+
+CI smoke test: 2026-02-19T12:03:02Z
