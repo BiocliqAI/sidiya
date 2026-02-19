@@ -46,6 +46,9 @@ function buildDailyEvents(data, dayDate, dayIndex) {
   const chf = data?.clinical_modules?.chf || {};
   const followups = data?.follow_up?.appointments || [];
   const tests = details?.follow_up?.required_tests || [];
+  const dayIso = toIsoDate(dayDate);
+  let hasFollowup = false;
+  let hasPrevisitTestReminder = false;
 
   if (Array.isArray(meds) && meds.length) {
     const medPreview = meds.slice(0, 4).map((m) => {
@@ -82,14 +85,27 @@ function buildDailyEvents(data, dayDate, dayIndex) {
     items.push({ kind: 'checkin', text: 'Milestone review and care-plan adjustment' });
   }
 
-  const dayIso = toIsoDate(dayDate);
   if (Array.isArray(followups)) {
     followups.forEach((appt) => {
       if (!appt?.scheduled_datetime) return;
-      if (toIsoDate(appt.scheduled_datetime) === dayIso) {
+      const followIso = toIsoDate(appt.scheduled_datetime);
+      if (followIso === dayIso) {
+        hasFollowup = true;
         items.push({
           kind: 'followup',
           text: `Follow-up: ${appt?.appointment_type || 'visit'} with ${appt?.provider_name || 'doctor'}`,
+        });
+      }
+
+      const apptDate = toDateOnly(appt.scheduled_datetime);
+      if (!apptDate) return;
+      const reminderDate = plusDays(apptDate, -2);
+      if (toIsoDate(reminderDate) === dayIso) {
+        hasPrevisitTestReminder = true;
+        const testsText = Array.isArray(tests) && tests.length ? tests.join(', ') : 'scheduled pre-visit tests';
+        items.push({
+          kind: 'test',
+          text: `Reminder: Complete tests before follow-up (${testsText})`,
         });
       }
     });
@@ -101,7 +117,7 @@ function buildDailyEvents(data, dayDate, dayIndex) {
     }
   }
 
-  return items;
+  return { items, hasFollowup, hasPrevisitTestReminder };
 }
 
 function renderCalendar(data) {
@@ -134,13 +150,17 @@ function renderCalendar(data) {
 
   for (let i = 0; i < 90; i += 1) {
     const dayDate = plusDays(startDate, i);
-    const dayEvents = buildDailyEvents(data, dayDate, i);
+    const dayPlan = buildDailyEvents(data, dayDate, i);
+    const dayEvents = dayPlan.items;
     const eventHtml = dayEvents
       .map((ev) => `<li class="cal-item ${escapeHtml(`cal-${ev.kind}`)}">${escapeHtml(ev.text)}</li>`)
       .join('');
+    const dayClasses = ['cal-day'];
+    if (dayPlan.hasFollowup) dayClasses.push('cal-day-important');
+    if (dayPlan.hasPrevisitTestReminder) dayClasses.push('cal-day-reminder');
 
     cells.push(`
-      <article class="cal-day">
+      <article class="${dayClasses.join(' ')}">
         <div class="cal-day-head">
           <span class="cal-day-num">Day ${i + 1}</span>
           <span class="cal-date">${escapeHtml(dayDate.toISOString().slice(0, 10))}</span>
@@ -193,4 +213,3 @@ function renderCalendar(data) {
       renderFallback();
     });
 })();
-

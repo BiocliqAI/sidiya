@@ -243,6 +243,16 @@ button:disabled {
   padding: 0.45rem;
 }
 
+.cal-day-important {
+  border: 2px solid #d07b00;
+  background: linear-gradient(180deg, #fff4de 0%, #fffaf1 100%);
+}
+
+.cal-day-reminder {
+  border: 2px solid #7f2231;
+  background: linear-gradient(180deg, #fff0f2 0%, #fff9fa 100%);
+}
+
 .cal-day-empty {
   border: 1px dashed var(--border);
   background: #f8fbfc;
