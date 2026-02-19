@@ -1,0 +1,13 @@
+.git
+.github
+.venv
+.venv312
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.env
+output
+.web.log
+.web.pid
+*.pdf

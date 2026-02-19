@@ -71,3 +71,29 @@ curl -X POST "http://127.0.0.1:8000/extract" \
 - OCR source is Landing.ai Parse API.
 - Parser uses a hybrid method: deterministic markdown extraction (diagnosis, admission reason, follow-up doctor/date, meds, advice, LVEF) plus Gemini augmentation.
 - Next step: add nurse/admin gap-fill endpoint for missing hard-stop fields.
+
+## Firebase CI/CD (GitHub)
+
+This repo includes CI/CD for:
+- Cloud Run service: `sidiya-app` (public, unauthenticated)
+- Firebase Hosting: project/site `sidiya-672f1` rewriting all routes to Cloud Run
+
+Required GitHub repository secrets:
+- `GCP_SA_KEY` (service account JSON with deploy permissions)
+- `GEMINI_API_KEY`
+- `LANDINGAI_API_KEY`
+
+Workflow file:
+- `.github/workflows/deploy.yml`
+
+Infra config files:
+- `firebase.json`
+- `.firebaserc`
+- `Dockerfile`
+
+Recommended service account roles:
+- `roles/run.admin`
+- `roles/iam.serviceAccountUser`
+- `roles/cloudbuild.builds.editor`
+- `roles/artifactregistry.writer`
+- `roles/firebasehosting.admin`
