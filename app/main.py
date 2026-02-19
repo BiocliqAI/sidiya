@@ -3,18 +3,26 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.gemini_client import GeminiError
+from app.config import settings
 from app.pipeline import run_extraction
+from app.storage import get_extraction, init_db, list_extractions, save_extraction
+from app.summary import build_simplified_summary
 
 app = FastAPI(title="Oyster Discharge Extractor", version="0.1.0")
 app.mount("/static", StaticFiles(directory=str(Path(__file__).resolve().parent.parent / "static")), name="static")
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
+
+
+@app.on_event("startup")
+def startup_event() -> None:
+    init_db()
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -27,14 +35,52 @@ def care_plan_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("care_plan.html", {"request": request})
 
 
+@app.get("/history", response_class=HTMLResponse)
+def history_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse("history.html", {"request": request})
+
+
+@app.get("/summary/{extraction_id}", response_class=HTMLResponse)
+def summary_page(request: Request, extraction_id: int) -> HTMLResponse:
+    record = get_extraction(extraction_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Extraction not found")
+    return templates.TemplateResponse(
+        "summary.html",
+        {
+            "request": request,
+            "record": record,
+        },
+    )
+
+
 @app.get("/careplan")
 def care_plan_alias() -> RedirectResponse:
     return RedirectResponse(url="/care-plan", status_code=307)
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+def health() -> dict:
+    return {
+        "status": "ok",
+        "config": {
+            "gemini_api_key_configured": bool(settings.gemini_api_key),
+            "landing_api_key_configured": bool(settings.landing_api_key),
+        },
+    }
+
+
+@app.get("/api/extractions")
+def extractions_api(limit: int = Query(default=100, ge=1, le=500)) -> dict:
+    return {"items": list_extractions(limit=limit)}
+
+
+@app.get("/api/extractions/{extraction_id}")
+def extraction_by_id_api(extraction_id: int) -> dict:
+    record = get_extraction(extraction_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Extraction not found")
+    return record
 
 
 @app.post("/extract")
@@ -55,4 +101,8 @@ async def extract(pdf: UploadFile = File(...)) -> dict:
         except Exception as exc:  # noqa: BLE001
             raise HTTPException(status_code=500, detail=f"Unexpected error: {exc}") from exc
 
+    summary_text = build_simplified_summary(output)
+    extraction_id = save_extraction(output, summary_text)
+    output["extraction_id"] = extraction_id
+    output["simplified_summary"] = summary_text
     return output

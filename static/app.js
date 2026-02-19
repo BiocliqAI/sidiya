@@ -8,6 +8,27 @@ const chfEl = document.getElementById('chf');
 const detailsEl = document.getElementById('details');
 const rawEl = document.getElementById('raw');
 const carePlanLinkEl = document.getElementById('care-plan-link');
+const summaryLinkEl = document.getElementById('summary-link');
+
+async function checkServerConfig() {
+  try {
+    const res = await fetch('/health');
+    const data = await res.json();
+    const cfg = data?.config || {};
+    const missing = [];
+    if (!cfg.gemini_api_key_configured) missing.push('GEMINI_API_KEY');
+    if (!cfg.landing_api_key_configured) missing.push('LANDINGAI_API_KEY');
+    if (missing.length) {
+      runBtn.disabled = true;
+      statusEl.textContent = `Server missing env vars: ${missing.join(', ')}. Add them in deployment env and redeploy.`;
+    } else {
+      runBtn.disabled = false;
+      statusEl.textContent = 'Idle';
+    }
+  } catch (_err) {
+    statusEl.textContent = 'Cannot reach backend /health. Check deployment and URL.';
+  }
+}
 
 function escapeHtml(v) {
   return String(v ?? '')
@@ -48,7 +69,13 @@ form.addEventListener('submit', async (e) => {
 
   try {
     const res = await fetch('/extract', { method: 'POST', body: fd });
-    const data = await res.json();
+    const rawText = await res.text();
+    let data = null;
+    try {
+      data = rawText ? JSON.parse(rawText) : {};
+    } catch (_err) {
+      data = { detail: rawText || 'Non-JSON response from backend' };
+    }
 
     if (!res.ok) {
       const detail = data?.detail || 'Request failed';
@@ -108,7 +135,17 @@ form.addEventListener('submit', async (e) => {
 
     rawEl.textContent = JSON.stringify(data, null, 2);
     localStorage.setItem('oyster_last_extraction', JSON.stringify(data));
+    const extractionId = data?.extraction_id;
+    if (extractionId) {
+      carePlanLinkEl.href = `/care-plan?id=${encodeURIComponent(extractionId)}`;
+      summaryLinkEl.href = `/summary/${encodeURIComponent(extractionId)}`;
+      localStorage.setItem('oyster_last_extraction_id', String(extractionId));
+    } else {
+      carePlanLinkEl.href = '/care-plan';
+      summaryLinkEl.href = '/summary/0';
+    }
     carePlanLinkEl.classList.remove('hidden');
+    summaryLinkEl.classList.remove('hidden');
     statusEl.textContent = 'Extraction complete.';
   } catch (err) {
     statusEl.textContent = `Error: ${err.message}`;
@@ -116,3 +153,5 @@ form.addEventListener('submit', async (e) => {
     runBtn.disabled = false;
   }
 });
+
+checkServerConfig();

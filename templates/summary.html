@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sidiya Simplified Summary</title>
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+  <main class="container">
+    <section class="panel hero">
+      <h1>Simplified Summary</h1>
+      <p>Extraction ID: {{ record.id }} | Created: {{ record.created_at }}</p>
+      <a class="link-btn" href="/history">Back to History</a>
+      <a class="link-btn" href="/care-plan?id={{ record.id }}" target="_blank" rel="noopener">Open Care Plan</a>
+    </section>
+
+    <section class="panel">
+      <h2>Snapshot</h2>
+      <div class="kv">
+        <div class="kv-row"><div class="k">Patient</div><div class="v">{{ record.patient_name or 'NA' }}</div></div>
+        <div class="kv-row"><div class="k">Primary Diagnosis</div><div class="v">{{ record.primary_diagnosis or 'NA' }}</div></div>
+        <div class="kv-row"><div class="k">Follow-Up</div><div class="v">{{ record.followup_datetime or 'NA' }}</div></div>
+        <div class="kv-row"><div class="k">Source PDF</div><div class="v">{{ record.source_file_name }}</div></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Simplified Guidance</h2>
+      <pre class="raw">{{ record.simplified_summary }}</pre>
+    </section>
+  </main>
+</body>
+</html>
