@@ -8,6 +8,7 @@ const chfEl = document.getElementById('chf');
 const detailsEl = document.getElementById('details');
 const rawEl = document.getElementById('raw');
 const carePlanLinkEl = document.getElementById('care-plan-link');
+const calendarLinkEl = document.getElementById('calendar-link');
 const summaryLinkEl = document.getElementById('summary-link');
 
 async function checkServerConfig() {
@@ -138,13 +139,16 @@ form.addEventListener('submit', async (e) => {
     const extractionId = data?.extraction_id;
     if (extractionId) {
       carePlanLinkEl.href = `/care-plan?id=${encodeURIComponent(extractionId)}`;
+      calendarLinkEl.href = `/calendar-view?id=${encodeURIComponent(extractionId)}`;
       summaryLinkEl.href = `/summary/${encodeURIComponent(extractionId)}`;
       localStorage.setItem('oyster_last_extraction_id', String(extractionId));
     } else {
       carePlanLinkEl.href = '/care-plan';
+      calendarLinkEl.href = '/calendar-view';
       summaryLinkEl.href = '/summary/0';
     }
     carePlanLinkEl.classList.remove('hidden');
+    calendarLinkEl.classList.remove('hidden');
     summaryLinkEl.classList.remove('hidden');
     statusEl.textContent = 'Extraction complete.';
   } catch (err) {

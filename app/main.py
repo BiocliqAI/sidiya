@@ -35,6 +35,11 @@ def care_plan_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("care_plan.html", {"request": request})
 
 
+@app.get("/calendar-view", response_class=HTMLResponse)
+def calendar_view_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse("calendar_view.html", {"request": request})
+
+
 @app.get("/history", response_class=HTMLResponse)
 def history_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("history.html", {"request": request})

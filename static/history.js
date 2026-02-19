@@ -47,6 +47,8 @@ function formatDateTime(value) {
           <td>
             <a href="/care-plan?id=${encodeURIComponent(item.id)}" target="_blank" rel="noopener">Care Plan</a>
             |
+            <a href="/calendar-view?id=${encodeURIComponent(item.id)}" target="_blank" rel="noopener">Calendar</a>
+            |
             <a href="/summary/${encodeURIComponent(item.id)}" target="_blank" rel="noopener">Summary</a>
           </td>
         </tr>
@@ -57,4 +59,3 @@ function formatDateTime(value) {
       tbody.innerHTML = '<tr><td colspan="7">Failed to load history</td></tr>';
     });
 })();
-

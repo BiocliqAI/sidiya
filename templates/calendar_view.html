@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sidiya Care Calendar</title>
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+  <main class="container">
+    <section class="panel hero">
+      <h1>Calendar View</h1>
+      <p>90-day daily care activity board for medications, measurements, check-ins, diet, and follow-ups.</p>
+      <a class="link-btn" href="/">Back to Extractor</a>
+      <a class="link-btn" href="/history">History</a>
+    </section>
+
+    <section class="panel" id="calendar-empty">
+      <h2>No Extracted Data Found</h2>
+      <p>Run extraction first or open this page with an extraction ID: <code>/calendar-view?id=&lt;id&gt;</code></p>
+    </section>
+
+    <section id="calendar-content" class="hidden">
+      <section class="panel">
+        <h2>Calendar Snapshot</h2>
+        <div id="calendar-snapshot" class="kv"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Daily Plan (90 Days)</h2>
+        <div id="calendar-grid" class="calendar-grid"></div>
+      </section>
+    </section>
+  </main>
+
+  <script src="/static/calendar_view.js"></script>
+</body>
+</html>
