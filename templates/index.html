@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyster CHF Extractor</title>
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+  <main class="container">
+    <section class="panel hero">
+      <h1>Discharge Summary to 90-Day CHF Plan</h1>
+      <p>Upload a scanned discharge PDF and review extracted fields plus missing nurse/admin items.</p>
+    </section>
+
+    <section class="panel">
+      <form id="extract-form">
+        <label>Discharge PDF</label>
+        <input type="file" id="pdf" name="pdf" accept="application/pdf" required />
+
+        <label>Gemini API Key (optional if server env already set)</label>
+        <input type="password" id="gemini_api_key" name="gemini_api_key" placeholder="AIza..." />
+
+        <label>Landing.ai API Key (optional if server env already set)</label>
+        <input type="password" id="landing_api_key" name="landing_api_key" placeholder="landing key..." />
+
+        <button type="submit" id="run-btn">Run Extraction</button>
+      </form>
+      <div id="status" class="status">Idle</div>
+      <a id="care-plan-link" class="link-btn hidden" href="/care-plan" target="_blank" rel="noopener">Open Care Plan Page</a>
+    </section>
+
+    <section class="grid">
+      <article class="panel">
+        <h2>Extracted Summary</h2>
+        <div id="summary" class="kv"></div>
+      </article>
+
+      <article class="panel">
+        <h2>Missing Hard-Stop Items</h2>
+        <ul id="hard-missing" class="list"></ul>
+      </article>
+
+      <article class="panel">
+        <h2>Missing Soft-Stop Items</h2>
+        <ul id="soft-missing" class="list"></ul>
+      </article>
+
+      <article class="panel">
+        <h2>CHF Module Snapshot</h2>
+        <div id="chf" class="kv"></div>
+      </article>
+
+      <article class="panel">
+        <h2>Parsed Details</h2>
+        <div id="details" class="kv"></div>
+      </article>
+    </section>
+
+    <section class="panel">
+      <h2>Raw JSON</h2>
+      <pre id="raw" class="raw"></pre>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

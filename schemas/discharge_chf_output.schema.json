@@ -1,0 +1,262 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oyster.health/schemas/discharge-chf-output-v1.schema.json",
+  "title": "Discharge Summary to 90-Day CHF Care Plan Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source_document",
+    "patient",
+    "encounter",
+    "clinical_episode",
+    "medications",
+    "follow_up",
+    "care_plan_90d",
+    "clinical_modules",
+    "validation"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0.0" },
+    "source_document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file_name", "ocr_quality_score", "page_count"],
+      "properties": {
+        "file_name": { "type": "string" },
+        "page_count": { "type": "integer", "minimum": 1 },
+        "ocr_quality_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "illegible_sections": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "patient": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["full_name", "dob", "sex_at_birth"],
+      "properties": {
+        "full_name": { "type": "string" },
+        "dob": { "type": "string", "format": "date" },
+        "sex_at_birth": { "type": "string", "enum": ["female", "male", "intersex", "unknown"] },
+        "mrn": { "type": ["string", "null"] }
+      }
+    },
+    "encounter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["facility_name", "admission_datetime", "discharge_datetime", "disposition"],
+      "properties": {
+        "facility_name": { "type": "string" },
+        "admission_datetime": { "type": "string", "format": "date-time" },
+        "discharge_datetime": { "type": "string", "format": "date-time" },
+        "disposition": {
+          "type": "string",
+          "enum": ["home", "home_with_health", "skilled_nursing_facility", "inpatient_rehab", "long_term_acute_care", "hospice", "other"]
+        }
+      }
+    },
+    "clinical_episode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason_for_hospitalization", "primary_diagnosis", "hospital_course_summary", "discharge_condition"],
+      "properties": {
+        "reason_for_hospitalization": { "type": "string" },
+        "primary_diagnosis": { "type": "string" },
+        "secondary_diagnoses": { "type": "array", "items": { "type": "string" } },
+        "hospital_course_summary": { "type": "string" },
+        "discharge_condition": { "type": "string", "enum": ["stable", "improving", "guarded", "critical", "unknown"] }
+      }
+    },
+    "medications": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["discharge_medications"],
+      "properties": {
+        "discharge_medications": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["medication_name", "dose", "route", "frequency", "indication"],
+            "properties": {
+              "medication_name": { "type": "string" },
+              "dose": { "type": "string" },
+              "route": { "type": "string" },
+              "frequency": { "type": "string" },
+              "indication": { "type": "string" }
+            }
+          }
+        },
+        "allergies": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "follow_up": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["appointments", "care_coordinator"],
+      "properties": {
+        "appointments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["appointment_type", "status"],
+            "properties": {
+              "appointment_type": { "type": "string" },
+              "status": { "type": "string", "enum": ["scheduled", "requested", "pending", "completed", "cancelled", "unknown"] },
+              "scheduled_datetime": { "type": ["string", "null"], "format": "date-time" },
+              "provider_name": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "care_coordinator": {
+          "type": "object",
+          "required": ["name", "role"],
+          "properties": {
+            "name": { "type": "string" },
+            "role": { "type": "string" },
+            "phone": { "type": ["string", "null"] }
+          }
+        }
+      }
+    },
+    "care_plan_90d": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start_date", "end_date", "phase_0_7", "phase_8_30", "phase_31_90"],
+      "properties": {
+        "start_date": { "type": "string", "format": "date" },
+        "end_date": { "type": "string", "format": "date" },
+        "phase_0_7": { "type": "array", "items": { "type": "string" } },
+        "phase_8_30": { "type": "array", "items": { "type": "string" } },
+        "phase_31_90": { "type": "array", "items": { "type": "string" } },
+        "trigger_action_rules": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "clinical_modules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chf"],
+      "properties": {
+        "chf": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "diagnosis_confirmed",
+            "hf_phenotype",
+            "congestion_status",
+            "gdmt",
+            "monitoring",
+            "follow_up",
+            "red_flags",
+            "validation"
+          ],
+          "properties": {
+            "enabled": { "type": "boolean", "const": true },
+            "diagnosis_confirmed": { "type": "boolean" },
+            "hf_phenotype": {
+              "type": "object",
+              "required": ["classification"],
+              "properties": {
+                "classification": { "type": "string", "enum": ["HFrEF", "HFmrEF", "HFpEF", "HFimpEF", "unknown"] },
+                "latest_lvef_percent": { "type": ["number", "null"], "minimum": 0, "maximum": 100 }
+              }
+            },
+            "congestion_status": {
+              "type": "object",
+              "required": ["euvolemic_at_discharge"],
+              "properties": {
+                "euvolemic_at_discharge": { "type": "boolean" },
+                "discharge_weight_kg": { "type": ["number", "null"] },
+                "target_dry_weight_kg": { "type": ["number", "null"] }
+              }
+            },
+            "gdmt": {
+              "type": "object",
+              "required": ["medication_classes"],
+              "properties": {
+                "medication_classes": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["class", "status"],
+                    "properties": {
+                      "class": {
+                        "type": "string",
+                        "enum": [
+                          "arni_or_acei_or_arb",
+                          "beta_blocker_hf_evidence",
+                          "mra",
+                          "sglt2i",
+                          "loop_diuretic",
+                          "hydralazine_isdn",
+                          "ivabradine",
+                          "vericiguat",
+                          "other"
+                        ]
+                      },
+                      "status": { "type": "string", "enum": ["active", "contraindicated", "not_tolerated", "not_indicated", "unknown"] },
+                      "drug_name": { "type": ["string", "null"] }
+                    }
+                  }
+                }
+              }
+            },
+            "monitoring": {
+              "type": "object",
+              "required": ["daily_weight_required", "bp_required", "symptom_check_required"],
+              "properties": {
+                "daily_weight_required": { "type": "boolean" },
+                "bp_required": { "type": "boolean" },
+                "heart_rate_required": { "type": "boolean" },
+                "symptom_check_required": { "type": "boolean" },
+                "lab_frequency": { "type": ["string", "null"] }
+              }
+            },
+            "follow_up": {
+              "type": "object",
+              "required": ["hf_followup_scheduled", "followup_within_7_days_target"],
+              "properties": {
+                "hf_followup_scheduled": { "type": "boolean" },
+                "followup_within_7_days_target": { "type": "boolean" },
+                "followup_datetime": { "type": ["string", "null"], "format": "date-time" }
+              }
+            },
+            "red_flags": {
+              "type": "object",
+              "required": ["yellow_zone", "red_zone"],
+              "properties": {
+                "yellow_zone": { "type": "array", "items": { "type": "string" } },
+                "red_zone": { "type": "array", "items": { "type": "string" } },
+                "weight_gain_trigger_24h_kg": { "type": ["number", "null"] },
+                "weight_gain_trigger_7d_kg": { "type": ["number", "null"] }
+              }
+            },
+            "validation": {
+              "type": "object",
+              "required": ["hard_stop_complete", "hard_stop_missing_fields"],
+              "properties": {
+                "hard_stop_complete": { "type": "boolean" },
+                "hard_stop_missing_fields": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "extracted_details": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hard_stop_complete", "hard_stop_missing_fields", "soft_stop_missing_fields", "ready_for_patient_app"],
+      "properties": {
+        "hard_stop_complete": { "type": "boolean" },
+        "hard_stop_missing_fields": { "type": "array", "items": { "type": "string" } },
+        "soft_stop_missing_fields": { "type": "array", "items": { "type": "string" } },
+        "ready_for_patient_app": { "type": "boolean" }
+      }
+    }
+  }
+}

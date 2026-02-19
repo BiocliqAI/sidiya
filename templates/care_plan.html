@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyster Post-Discharge Care Plan</title>
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+  <main class="container">
+    <section class="panel hero">
+      <h1>Simplified Post-Discharge Care Plan</h1>
+      <p>Patient-friendly guide for medications, warning signs, monitoring, follow-ups, tests, diet, and FAQs.</p>
+      <a class="link-btn" href="/">Back to Extractor</a>
+    </section>
+
+    <section class="panel" id="empty-state">
+      <h2>No Extracted Data Found</h2>
+      <p>Run extraction on the main page first, then reopen this care plan page.</p>
+    </section>
+
+    <section id="careplan-content" class="hidden">
+      <section class="panel">
+        <h2>Patient Snapshot</h2>
+        <div id="snapshot" class="kv"></div>
+      </section>
+
+      <section class="grid">
+        <article class="panel">
+          <h2>Days 0-7</h2>
+          <ul id="phase-0-7" class="list"></ul>
+        </article>
+        <article class="panel">
+          <h2>Days 8-30</h2>
+          <ul id="phase-8-30" class="list"></ul>
+        </article>
+        <article class="panel">
+          <h2>Days 31-90</h2>
+          <ul id="phase-31-90" class="list"></ul>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Medication Guide</h2>
+        <div class="table-wrap">
+          <table id="med-table" class="data-table">
+            <thead>
+              <tr>
+                <th>Medication</th>
+                <th>Dose</th>
+                <th>Route</th>
+                <th>Frequency</th>
+                <th>Purpose</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="panel">
+          <h2>Warning Signs (Call Care Team Same Day)</h2>
+          <ul id="yellow-signs" class="list"></ul>
+        </article>
+        <article class="panel">
+          <h2>Emergency Signs (Go To ER / Call 911)</h2>
+          <ul id="red-signs" class="list"></ul>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Daily Monitoring and Alerts</h2>
+        <div class="table-wrap">
+          <table id="monitor-table" class="data-table">
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Frequency</th>
+                <th>Target Range</th>
+                <th>Alert Threshold</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="panel">
+          <h2>Follow-Up Visits</h2>
+          <div class="table-wrap">
+            <table id="visit-table" class="data-table">
+              <thead>
+                <tr>
+                  <th>Visit Type</th>
+                  <th>Doctor</th>
+                  <th>Date/Time</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h2>Follow-Up Tests</h2>
+          <ul id="test-list" class="list"></ul>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Diet and Compliance Checklist</h2>
+        <ul id="diet-checklist" class="list"></ul>
+      </section>
+
+      <section class="panel">
+        <h2>FAQ (Simplified Guide)</h2>
+        <div id="faq" class="faq"></div>
+      </section>
+    </section>
+  </main>
+
+  <script src="/static/care_plan.js"></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+.venv/
+.venv312/
+
+# Environment files
+.env
+
+# OS/editor
+.DS_Store
+
+# Runtime
+.web.log
+.web.pid
+
+# Data/artifacts
+output/
+*.pdf
