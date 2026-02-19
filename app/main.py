@@ -3,7 +3,7 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -38,11 +38,7 @@ def health() -> dict[str, str]:
 
 
 @app.post("/extract")
-async def extract(
-    pdf: UploadFile = File(...),
-    gemini_api_key: str | None = Form(default=None),
-    landing_api_key: str | None = Form(default=None),
-) -> dict:
+async def extract(pdf: UploadFile = File(...)) -> dict:
     if pdf.content_type not in {"application/pdf", "application/octet-stream"}:
         raise HTTPException(status_code=400, detail="Upload a PDF file.")
 
@@ -53,11 +49,7 @@ async def extract(
         tmp.flush()
 
         try:
-            output = run_extraction(
-                tmp.name,
-                api_key=gemini_api_key or None,
-                landing_api_key=landing_api_key or None,
-            )
+            output = run_extraction(tmp.name)
         except (GeminiError, FileNotFoundError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except Exception as exc:  # noqa: BLE001

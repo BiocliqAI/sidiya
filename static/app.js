@@ -34,8 +34,6 @@ form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const pdfInput = document.getElementById('pdf');
-  const keyInput = document.getElementById('gemini_api_key');
-  const landingKeyInput = document.getElementById('landing_api_key');
 
   if (!pdfInput.files || pdfInput.files.length === 0) {
     statusEl.textContent = 'Choose a PDF first.';
@@ -44,12 +42,6 @@ form.addEventListener('submit', async (e) => {
 
   const fd = new FormData();
   fd.append('pdf', pdfInput.files[0]);
-  if (keyInput.value.trim()) {
-    fd.append('gemini_api_key', keyInput.value.trim());
-  }
-  if (landingKeyInput.value.trim()) {
-    fd.append('landing_api_key', landingKeyInput.value.trim());
-  }
 
   runBtn.disabled = true;
   statusEl.textContent = 'Running Landing OCR + Gemini extraction...';
