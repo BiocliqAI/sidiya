@@ -1,4 +1,4 @@
-name: Deploy to Firebase Hosting + Cloud Run
+name: Deploy to Cloud Run
 
 on:
   push:
@@ -69,14 +69,3 @@ jobs:
             --platform managed \
             --allow-unauthenticated \
             --set-env-vars GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},LANDINGAI_API_KEY=${{ secrets.LANDINGAI_API_KEY }}
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
-
-      - name: Deploy Firebase Hosting
-        run: firebase deploy --only hosting --project "$PROJECT_ID" --non-interactive
