@@ -24,7 +24,7 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
@@ -37,7 +37,12 @@ jobs:
       - name: Build and push container image
         run: |
           IMAGE="gcr.io/${PROJECT_ID}/${SERVICE_NAME}:${GITHUB_SHA}"
-          BUILD_ID=$(gcloud builds submit --tag "$IMAGE" --async --format='value(metadata.build.id)')
+          BUILD_ID=$(gcloud builds submit --tag "$IMAGE" --async --format='value(id)' | tr -d '\n')
+          if [ -z "$BUILD_ID" ]; then
+            echo "Failed to capture Cloud Build ID"
+            exit 1
+          fi
+          echo "Cloud Build ID: $BUILD_ID"
           echo "IMAGE=$IMAGE" >> $GITHUB_ENV
           echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV
 
