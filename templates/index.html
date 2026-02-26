@@ -3,28 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sidiya : Discharge summary simplification web app</title>
+  <title>Sidiya &mdash; Discharge Summary Extractor</title>
   <link rel="stylesheet" href="/static/app.css" />
 </head>
 <body>
   <main class="container">
+    <nav class="topnav">
+      <a class="topnav-brand" href="/"><em>S</em>idiya</a>
+      <a href="/">Extractor</a>
+      <a href="/history">History</a>
+    </nav>
+
     <section class="panel hero">
-      <h1>Sidiya : Discharge summary simplification web app</h1>
-      <p>Upload a scanned discharge PDF and review extracted fields plus missing nurse/admin items.</p>
+      <h1>Discharge Summary <span>Extractor</span></h1>
+      <p>Upload a scanned discharge PDF. We extract structured clinical data, validate it against safety checks, and generate a 90-day post-discharge care plan.</p>
     </section>
 
     <section class="panel">
       <form id="extract-form">
         <label>Discharge PDF</label>
         <input type="file" id="pdf" name="pdf" accept="application/pdf" required />
-
         <button type="submit" id="run-btn">Run Extraction</button>
       </form>
-      <div id="status" class="status">Idle</div>
-      <a class="link-btn" href="/history">View Extraction History</a>
-      <a id="care-plan-link" class="link-btn hidden" href="/care-plan" target="_blank" rel="noopener">Open Care Plan Page</a>
-      <a id="calendar-link" class="link-btn hidden" href="/calendar-view" target="_blank" rel="noopener">Open Calendar View</a>
-      <a id="summary-link" class="link-btn hidden" href="/" target="_blank" rel="noopener">Open Simplified Summary</a>
+      <div id="status" class="status"><span class="pulse-dot"></span>Idle &mdash; waiting for upload</div>
+      <div style="margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.4rem;">
+        <a class="link-btn" href="/history">View Extraction History</a>
+        <a id="care-plan-link" class="link-btn hidden" href="/care-plan" target="_blank" rel="noopener">Open Care Plan</a>
+        <a id="calendar-link" class="link-btn hidden" href="/calendar-view" target="_blank" rel="noopener">Open Calendar</a>
+        <a id="summary-link" class="link-btn hidden" href="/" target="_blank" rel="noopener">Open Summary</a>
+      </div>
     </section>
 
     <section class="grid">

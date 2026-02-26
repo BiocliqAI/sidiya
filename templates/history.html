@@ -3,20 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sidiya Extraction History</title>
+  <title>Sidiya &mdash; Extraction History</title>
   <link rel="stylesheet" href="/static/app.css" />
 </head>
 <body>
   <main class="container">
+    <nav class="topnav">
+      <a class="topnav-brand" href="/"><em>S</em>idiya</a>
+      <a href="/">Extractor</a>
+      <a href="/care-plan">Care Plan</a>
+      <a href="/calendar-view">Calendar</a>
+    </nav>
+
     <section class="panel hero">
-      <h1>Extraction History</h1>
-      <p>All saved extractions with links to care plan and simplified summary pages.</p>
-      <a class="link-btn" href="/">Back to Extractor</a>
+      <h1>Extraction <span>History</span></h1>
+      <p>All saved extractions with links to care plan, calendar, and simplified summary pages.</p>
     </section>
 
     <section class="panel">
-      <div id="history-status" class="status">Loading history...</div>
-      <div class="table-wrap">
+      <div id="history-status" class="status"><span class="pulse-dot"></span>Loading history&hellip;</div>
+      <div class="table-wrap" style="margin-top: 1rem;">
         <table id="history-table" class="data-table">
           <thead>
             <tr>

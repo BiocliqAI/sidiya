@@ -47,6 +47,22 @@ function kvRow(k, v) {
   return `<div class="kv-row"><div class="k">${escapeHtml(k)}</div><div class="v">${escapeHtml(v)}</div></div>`;
 }
 
+function inferPurposeFromMedicationName(name) {
+  const n = String(name || '').toLowerCase();
+  if (!n) return 'As prescribed';
+  if (n.includes('ecosprin') || n.includes('aspirin')) return 'Antiplatelet (prevents clots)';
+  if (n.includes('eliquis') || n.includes('apixaban') || n.includes('warfarin')) return 'Anticoagulant (blood thinner)';
+  if (n.includes('atorvastatin') || n.includes('rosuvastatin') || n.includes('statin')) return 'Cholesterol lowering / vascular protection';
+  if (n.includes('concor') || n.includes('bisoprolol') || n.includes('metoprolol') || n.includes('betaloc')) return 'Heart rate and blood pressure control';
+  if (n.includes('sacurise') || n.includes('sacubitril') || n.includes('valsartan')) return 'Heart failure therapy';
+  if (n.includes('aldactone') || n.includes('spironolactone')) return 'Diuretic / heart failure support';
+  if (n.includes('lasix') || n.includes('frusemide') || n.includes('furosemide') || n.includes('torsemide')) return 'Diuretic (remove excess fluid)';
+  if (n.includes('pan') || n.includes('pantoprazole') || n.includes('rabeprazole') || n.includes('omeprazole')) return 'Gastric acid protection';
+  if (n.includes('levasam') || n.includes('levetiracetam')) return 'Seizure prevention/control';
+  if (n.includes('metformin') || n.includes('insulin') || n.includes('glimepiride')) return 'Diabetes control';
+  return 'As prescribed';
+}
+
 function buildFaq(doctorName) {
   return [
     {
@@ -113,11 +129,14 @@ function buildFaq(doctorName) {
     fillTableBody('med-table', meds, (m) => {
       const unknown = ['medication_name', 'dose', 'route', 'frequency'].some((k) => (m?.[k] || '').toLowerCase() === 'unknown');
       const rowClass = unknown ? ' class="warn-row"' : '';
+      const purpose = (m?.indication || '').toLowerCase() === 'unknown'
+        ? inferPurposeFromMedicationName(m?.medication_name)
+        : (m?.indication || 'As prescribed');
       return `<td${rowClass}>${escapeHtml(m?.medication_name || 'NA')}</td>
       <td${rowClass}>${escapeHtml(m?.dose || 'NA')}</td>
       <td${rowClass}>${escapeHtml(m?.route || 'NA')}</td>
       <td${rowClass}>${escapeHtml(m?.frequency || 'NA')}</td>
-      <td>${escapeHtml(m?.indication || 'As prescribed')}</td>`;
+      <td>${escapeHtml(purpose)}</td>`;
     });
 
     const yellow = [

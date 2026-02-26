@@ -25,6 +25,16 @@ Requirements:
 - Do not emit "unknown" for fields explicitly present in the parsed markdown.
 """.strip()
 
+MEDICATION_INDICATION_SYSTEM_PROMPT = """
+You map discharge medications to patient-friendly clinical purpose.
+Return STRICT JSON only.
+Do not change medication names.
+Prefer concrete purposes such as: antiplatelet, anticoagulation, heart-failure therapy,
+diuretic for fluid removal, BP control, lipid lowering, diabetes control, gastric protection,
+pain control, antiarrhythmic.
+If uncertain but inferable from drug class/name, provide "likely <purpose>" instead of "unknown".
+""".strip()
+
 _DATE_RE = re.compile(r"\b(\d{1,2}/\d{1,2}/\d{2,4})\b")
 
 
@@ -350,6 +360,29 @@ def _detect_chf_classification(diagnosis_texts: list[str]) -> str:
 
 
 def _normalize_medication_rows(raw_rows: list[Any], heuristic_rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    def normalized_med_name(value: str) -> str:
+        return re.sub(r"[^a-z0-9]+", "", (value or "").strip().lower())
+
+    def merge_indications(
+        base_rows: list[dict[str, str]],
+        source_rows: list[dict[str, str]],
+    ) -> list[dict[str, str]]:
+        source_map: dict[str, str] = {}
+        for row in source_rows:
+            name_key = normalized_med_name(str(row.get("medication_name", "")))
+            indication = str(row.get("indication", "")).strip()
+            if name_key and not _is_unknown(indication):
+                source_map[name_key] = indication
+
+        merged: list[dict[str, str]] = []
+        for row in base_rows:
+            out = dict(row)
+            name_key = normalized_med_name(str(out.get("medication_name", "")))
+            if name_key and _is_unknown(out.get("indication")) and name_key in source_map:
+                out["indication"] = source_map[name_key]
+            merged.append(out)
+        return merged
+
     def med_item(m: Any) -> dict[str, str]:
         if not isinstance(m, dict):
             return {
@@ -377,9 +410,12 @@ def _normalize_medication_rows(raw_rows: list[Any], heuristic_rows: list[dict[st
             unknown_rows += 1
 
     if heuristic_rows and (unknown_rows > 0 or len(heuristic_rows) > len(normalized_raw)):
-        return heuristic_rows
+        return merge_indications(heuristic_rows, normalized_raw)
 
-    return normalized_raw or [{
+    if normalized_raw:
+        return merge_indications(normalized_raw, heuristic_rows)
+
+    return [{
         "medication_name": "unknown",
         "dose": "unknown",
         "route": "unknown",
@@ -709,6 +745,94 @@ def _normalize_to_schema(raw: dict[str, Any], ocr: dict[str, Any], pdf_name: str
     return output
 
 
+def _enrich_medication_indications_with_gemini(
+    extracted: dict[str, Any],
+    gemini_client: GeminiClient,
+    json_model: str,
+) -> dict[str, Any]:
+    meds_container = extracted.get("medications", {})
+    if not isinstance(meds_container, dict):
+        return extracted
+
+    meds = meds_container.get("discharge_medications", [])
+    if not isinstance(meds, list) or not meds:
+        return extracted
+
+    targets: list[dict[str, Any]] = []
+    for idx, med in enumerate(meds):
+        if not isinstance(med, dict):
+            continue
+        if _is_unknown(med.get("medication_name")):
+            continue
+        if _is_unknown(med.get("indication")):
+            targets.append(
+                {
+                    "row_index": idx,
+                    "medication_name": med.get("medication_name"),
+                    "dose": med.get("dose"),
+                    "route": med.get("route"),
+                    "frequency": med.get("frequency"),
+                }
+            )
+
+    if not targets:
+        return extracted
+
+    clinical = extracted.get("clinical_episode", {}) if isinstance(extracted.get("clinical_episode"), dict) else {}
+    context = {
+        "primary_diagnosis": clinical.get("primary_diagnosis"),
+        "secondary_diagnoses": clinical.get("secondary_diagnoses", []),
+        "reason_for_hospitalization": clinical.get("reason_for_hospitalization"),
+        "medications_needing_purpose": targets,
+    }
+
+    prompt = f"""
+Infer the most likely purpose for each medication row based on diagnosis/context and common usage.
+Return strict JSON with this shape:
+{{
+  "items": [
+    {{
+      "row_index": 0,
+      "indication": "short purpose"
+    }}
+  ]
+}}
+Use each row_index from input exactly once.
+Context:
+{json.dumps(context, ensure_ascii=True)}
+""".strip()
+
+    try:
+        inferred = gemini_client.generate_json(
+            model=json_model,
+            system_prompt=MEDICATION_INDICATION_SYSTEM_PROMPT,
+            user_prompt=prompt,
+            temperature=0.0,
+        )
+    except GeminiError:
+        return extracted
+
+    items = inferred.get("items", [])
+    if not isinstance(items, list):
+        return extracted
+
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        row_index = item.get("row_index")
+        indication = str(item.get("indication", "")).strip()
+        if not isinstance(row_index, int):
+            continue
+        if row_index < 0 or row_index >= len(meds):
+            continue
+        if _is_unknown(indication):
+            continue
+        if isinstance(meds[row_index], dict):
+            meds[row_index]["indication"] = indication
+
+    return extracted
+
+
 def run_extraction(
     pdf_path: str,
     model_ocr: str | None = None,
@@ -775,6 +899,7 @@ Try to include keys aligned with this structure:
         llm_failed = True
 
     extracted = _normalize_to_schema(extracted_raw, ocr_result, pdf_file.name, heuristics)
+    extracted = _enrich_medication_indications_with_gemini(extracted, gemini_client, json_model)
     if llm_failed:
         extracted["validation"]["soft_stop_missing_fields"].append("llm.extraction_fallback_used")
 

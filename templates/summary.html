@@ -3,17 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sidiya Simplified Summary</title>
+  <title>Sidiya &mdash; Simplified Summary</title>
   <link rel="stylesheet" href="/static/app.css" />
 </head>
 <body>
   <main class="container">
+    <nav class="topnav">
+      <a class="topnav-brand" href="/"><em>S</em>idiya</a>
+      <a href="/">Extractor</a>
+      <a href="/history">History</a>
+      <a href="/care-plan?id={{ record.id }}" target="_blank" rel="noopener">Care Plan</a>
+      <a href="/calendar-view?id={{ record.id }}" target="_blank" rel="noopener">Calendar</a>
+    </nav>
+
     <section class="panel hero">
-      <h1>Simplified Summary</h1>
-      <p>Extraction ID: {{ record.id }} | Created: {{ record.created_at }}</p>
-      <a class="link-btn" href="/history">Back to History</a>
-      <a class="link-btn" href="/care-plan?id={{ record.id }}" target="_blank" rel="noopener">Open Care Plan</a>
-      <a class="link-btn" href="/calendar-view?id={{ record.id }}" target="_blank" rel="noopener">Open Calendar View</a>
+      <h1>Simplified <span>Summary</span></h1>
+      <p>Extraction #{{ record.id }} &mdash; Created {{ record.created_at }}</p>
     </section>
 
     <section class="panel">

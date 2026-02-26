@@ -3,21 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Oyster Post-Discharge Care Plan</title>
+  <title>Sidiya &mdash; Post-Discharge Care Plan</title>
   <link rel="stylesheet" href="/static/app.css" />
 </head>
 <body>
   <main class="container">
+    <nav class="topnav">
+      <a class="topnav-brand" href="/"><em>S</em>idiya</a>
+      <a href="/">Extractor</a>
+      <a href="/calendar-view">Calendar</a>
+      <a href="/history">History</a>
+    </nav>
+
     <section class="panel hero">
-      <h1>Simplified Post-Discharge Care Plan</h1>
-      <p>Patient-friendly guide for medications, warning signs, monitoring, follow-ups, tests, diet, and FAQs.</p>
-      <a class="link-btn" href="/">Back to Extractor</a>
-      <a class="link-btn" href="/calendar-view">Open Calendar View</a>
+      <h1>Post-Discharge <span>Care Plan</span></h1>
+      <p>Patient-friendly guide covering medications, warning signs, daily monitoring, follow-ups, tests, diet, and frequently asked questions.</p>
     </section>
 
     <section class="panel" id="empty-state">
+      <div class="empty-state-icon">&#x1F4CB;</div>
       <h2>No Extracted Data Found</h2>
-      <p>Run extraction on the main page first, then reopen this care plan page.</p>
+      <p>Run an extraction on the main page first, then reopen this care plan page.</p>
+      <a class="link-btn" href="/">Go to Extractor</a>
     </section>
 
     <section id="careplan-content" class="hidden">
@@ -28,15 +35,18 @@
 
       <section class="grid">
         <article class="panel">
-          <h2>Days 0-7</h2>
+          <span class="phase-badge phase-0-7">Phase 1</span>
+          <h2>Days 0&ndash;7</h2>
           <ul id="phase-0-7" class="list"></ul>
         </article>
         <article class="panel">
-          <h2>Days 8-30</h2>
+          <span class="phase-badge phase-8-30">Phase 2</span>
+          <h2>Days 8&ndash;30</h2>
           <ul id="phase-8-30" class="list"></ul>
         </article>
         <article class="panel">
-          <h2>Days 31-90</h2>
+          <span class="phase-badge phase-31-90">Phase 3</span>
+          <h2>Days 31&ndash;90</h2>
           <ul id="phase-31-90" class="list"></ul>
         </article>
       </section>
@@ -61,17 +71,19 @@
 
       <section class="grid">
         <article class="panel">
-          <h2>Warning Signs (Call Care Team Same Day)</h2>
+          <h2>Warning Signs</h2>
+          <p style="margin-bottom: 0.6rem; font-size: 0.8rem; color: var(--warn);">Call care team same day</p>
           <ul id="yellow-signs" class="list"></ul>
         </article>
         <article class="panel">
-          <h2>Emergency Signs (Go To ER / Call 911)</h2>
+          <h2>Emergency Signs</h2>
+          <p style="margin-bottom: 0.6rem; font-size: 0.8rem; color: var(--danger);">Go to ER / Call 911</p>
           <ul id="red-signs" class="list"></ul>
         </article>
       </section>
 
       <section class="panel">
-        <h2>Daily Monitoring and Alerts</h2>
+        <h2>Daily Monitoring &amp; Alerts</h2>
         <div class="table-wrap">
           <table id="monitor-table" class="data-table">
             <thead>
@@ -112,12 +124,12 @@
       </section>
 
       <section class="panel">
-        <h2>Diet and Compliance Checklist</h2>
+        <h2>Diet &amp; Compliance Checklist</h2>
         <ul id="diet-checklist" class="list"></ul>
       </section>
 
       <section class="panel">
-        <h2>FAQ (Simplified Guide)</h2>
+        <h2>Frequently Asked Questions</h2>
         <div id="faq" class="faq"></div>
       </section>
     </section>

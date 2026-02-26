@@ -3,21 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sidiya Care Calendar</title>
+  <title>Sidiya &mdash; 90-Day Care Calendar</title>
   <link rel="stylesheet" href="/static/app.css" />
 </head>
 <body>
   <main class="container">
+    <nav class="topnav">
+      <a class="topnav-brand" href="/"><em>S</em>idiya</a>
+      <a href="/">Extractor</a>
+      <a href="/care-plan">Care Plan</a>
+      <a href="/history">History</a>
+    </nav>
+
     <section class="panel hero">
-      <h1>Calendar View</h1>
-      <p>90-day daily care activity board for medications, measurements, check-ins, diet, and follow-ups.</p>
-      <a class="link-btn" href="/">Back to Extractor</a>
-      <a class="link-btn" href="/history">History</a>
+      <h1>90-Day Care <span>Calendar</span></h1>
+      <p>Daily care activity board covering medications, measurements, check-ins, diet compliance, and follow-up appointments.</p>
     </section>
 
     <section class="panel" id="calendar-empty">
+      <div class="empty-state-icon">&#x1F4C5;</div>
       <h2>No Extracted Data Found</h2>
-      <p>Run extraction first or open this page with an extraction ID: <code>/calendar-view?id=&lt;id&gt;</code></p>
+      <p>Run an extraction first or open this page with an extraction ID: <code style="color: var(--accent); background: var(--bg-raised); padding: 0.15rem 0.4rem; border-radius: 4px;">/calendar-view?id=&lt;id&gt;</code></p>
+      <a class="link-btn" href="/">Go to Extractor</a>
     </section>
 
     <section id="calendar-content" class="hidden">
@@ -27,7 +34,7 @@
       </section>
 
       <section class="panel">
-        <h2>Daily Plan (90 Days)</h2>
+        <h2>Daily Plan</h2>
         <div id="calendar-grid" class="calendar-grid"></div>
       </section>
     </section>

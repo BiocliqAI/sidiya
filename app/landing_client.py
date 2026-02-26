@@ -15,7 +15,7 @@ class LandingClient:
     def __init__(self, api_key: str | None = None):
         self.api_key = api_key or settings.landing_api_key
         if not self.api_key:
-            raise LandingError("LANDINGAI_API_KEY is missing. Set it in environment, UI field, or API form field.")
+            raise LandingError("LANDINGAI_API_KEY is missing. Set it in environment.")
 
     def parse_document(self, pdf_bytes: bytes, filename: str, model: str | None = None) -> dict[str, Any]:
         files = {
