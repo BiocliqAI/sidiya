@@ -16,8 +16,29 @@ from app.storage import get_extraction, init_db, list_extractions, save_extracti
 from app.summary import build_simplified_summary
 
 app = FastAPI(title="Oyster Discharge Extractor", version="0.1.0")
-app.mount("/static", StaticFiles(directory=str(Path(__file__).resolve().parent.parent / "static")), name="static")
+
+import hashlib as _hashlib
+
+_static_dir = Path(__file__).resolve().parent.parent / "static"
+app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
+
+# Cache-bust token: hash of css+js content at startup
+_bust = _hashlib.md5(
+    b"".join(p.read_bytes() for p in sorted(_static_dir.glob("*")) if p.is_file()),
+    usedforsecurity=False,
+).hexdigest()[:8]
+templates.env.globals["v"] = _bust
+
+
+@app.middleware("http")
+async def add_cache_headers(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "public, max-age=60"
+    elif response.headers.get("content-type", "").startswith("text/html"):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
 
 
 @app.on_event("startup")
