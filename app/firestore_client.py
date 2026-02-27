@@ -22,14 +22,25 @@ _db = None
 
 
 def _get_db():
-    """Lazy-initialize Firebase Admin SDK and return Firestore client."""
+    """Lazy-initialize Firebase Admin SDK and return Firestore client.
+
+    Uses key file locally (firebase-admin-key.json) or Application Default
+    Credentials in Cloud Run (no key file needed).
+    """
     global _db
     if _db is not None:
         return _db
 
     if not firebase_admin._apps:
-        cred = credentials.Certificate(settings.firebase_credentials_path)
-        firebase_admin.initialize_app(cred, {"projectId": settings.firebase_project_id})
+        import os
+        key_path = settings.firebase_credentials_path
+        if key_path and os.path.exists(key_path):
+            # Local development: use key file
+            cred = credentials.Certificate(key_path)
+            firebase_admin.initialize_app(cred, {"projectId": settings.firebase_project_id})
+        else:
+            # Cloud Run: use Application Default Credentials
+            firebase_admin.initialize_app(options={"projectId": settings.firebase_project_id})
 
     _db = firestore.client()
     return _db
