@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sidiya — Provider Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/app.css?v={{ v }}">
+  <link rel="stylesheet" href="/static/provider.css?v={{ v }}">
+</head>
+<body>
+  <div class="provider-app">
+
+    <!-- Header -->
+    <header class="prov-header">
+      <div class="prov-header-left">
+        <h1 class="prov-brand">Sidiya</h1>
+        <span class="prov-subtitle">Provider Dashboard</span>
+      </div>
+      <div class="prov-header-right">
+        <a href="/" class="prov-link">Extractor</a>
+        <a href="/history" class="prov-link">History</a>
+      </div>
+    </header>
+
+    <!-- Alerts Banner -->
+    <section id="alerts-section" class="prov-section" hidden>
+      <div class="section-header">
+        <h2>Open Alerts</h2>
+        <span class="alert-count" id="alert-count">0</span>
+      </div>
+      <div id="alerts-list" class="alerts-list"></div>
+    </section>
+
+    <!-- Register Patient Form -->
+    <section class="prov-section">
+      <div class="section-header">
+        <h2>Register Patient</h2>
+      </div>
+      <form id="register-form" class="register-form glass-panel">
+        <div class="form-row">
+          <div class="form-field">
+            <label>Extraction ID</label>
+            <input type="number" id="reg-extraction-id" placeholder="e.g. 5" required>
+          </div>
+          <div class="form-field">
+            <label>Patient Phone</label>
+            <input type="tel" id="reg-phone" placeholder="+91 98765 43210" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Caregiver Phone</label>
+            <input type="tel" id="reg-caregiver-phone" placeholder="+91 98765 43210">
+          </div>
+          <div class="form-field">
+            <label>Nurse Phone</label>
+            <input type="tel" id="reg-nurse-phone" placeholder="+91 98765 43210">
+          </div>
+        </div>
+        <button type="submit" class="btn-register">Register & Create Reminders</button>
+        <p id="reg-feedback" class="reg-feedback" hidden></p>
+      </form>
+    </section>
+
+    <!-- Patient List -->
+    <section class="prov-section">
+      <div class="section-header">
+        <h2>Patient Overview</h2>
+        <button id="btn-refresh" class="btn-refresh">Refresh</button>
+      </div>
+      <div id="patient-list" class="patient-list">
+        <p class="empty-state">Loading patients...</p>
+      </div>
+    </section>
+
+    <!-- Patient Detail Modal -->
+    <div id="patient-modal" class="modal" hidden>
+      <div class="modal-overlay"></div>
+      <div class="modal-content glass-panel">
+        <button class="modal-close" id="modal-close">&times;</button>
+        <h2 id="modal-patient-name">Patient</h2>
+        <p id="modal-patient-meta" class="modal-meta"></p>
+
+        <div class="modal-section">
+          <h3>Today's Actions</h3>
+          <div id="modal-today-actions"></div>
+        </div>
+
+        <div class="modal-section">
+          <h3>Weight Trend (7 days)</h3>
+          <canvas id="modal-weight-chart" height="180"></canvas>
+        </div>
+
+        <div class="modal-section">
+          <h3>Compliance (7 days)</h3>
+          <div id="modal-compliance"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="/static/provider.js?v={{ v }}"></script>
+</body>
+</html>

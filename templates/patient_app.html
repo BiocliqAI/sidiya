@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#080e1a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Sidiya — My Care</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/patient.css?v={{ v }}">
+</head>
+<body>
+  <div id="app">
+
+    <!-- ═══════════ LOGIN SCREEN ═══════════ -->
+    <div id="screen-login" class="screen active">
+      <div class="login-container">
+        <div class="login-logo">
+          <h1 class="brand">Sidiya</h1>
+          <p class="tagline">Your Care Companion</p>
+        </div>
+        <div class="login-form glass-card">
+          <label for="login-phone">Phone Number</label>
+          <input type="tel" id="login-phone" placeholder="+91 98765 43210" autocomplete="tel" inputmode="tel">
+          <button id="btn-login" class="btn-primary">Sign In</button>
+          <p id="login-error" class="error-text" hidden></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ HOME / TODAY SCREEN ═══════════ -->
+    <div id="screen-home" class="screen">
+      <header class="top-bar">
+        <div>
+          <h2 class="greeting" id="greeting-text">Good morning</h2>
+          <p class="sub-greeting" id="patient-name-text">Loading...</p>
+        </div>
+        <div class="day-badge" id="day-badge">Day 0</div>
+      </header>
+
+      <div class="task-cards">
+        <!-- Weight Card -->
+        <div class="task-card" id="card-weight" data-action="weight">
+          <div class="task-icon">⚖️</div>
+          <div class="task-info">
+            <h3>Log Weight</h3>
+            <p class="task-status" id="weight-status">Pending</p>
+          </div>
+          <div class="task-chevron">›</div>
+        </div>
+
+        <!-- Medications Card -->
+        <div class="task-card" id="card-meds" data-action="meds">
+          <div class="task-icon">💊</div>
+          <div class="task-info">
+            <h3>Medications</h3>
+            <p class="task-status" id="meds-status">Loading...</p>
+          </div>
+          <div class="task-chevron">›</div>
+        </div>
+
+        <!-- BP Card -->
+        <div class="task-card" id="card-bp" data-action="bp">
+          <div class="task-icon">🩺</div>
+          <div class="task-info">
+            <h3>Blood Pressure</h3>
+            <p class="task-status" id="bp-status">Pending</p>
+          </div>
+          <div class="task-chevron">›</div>
+        </div>
+
+        <!-- Symptom Check -->
+        <div class="task-card" id="card-symptoms" data-action="symptoms">
+          <div class="task-icon">📋</div>
+          <div class="task-info">
+            <h3>Symptom Check</h3>
+            <p class="task-status" id="symptom-status">Pending</p>
+          </div>
+          <div class="task-chevron">›</div>
+        </div>
+      </div>
+
+      <!-- Upcoming Appointment -->
+      <div class="appointment-card glass-card" id="appointment-card" hidden>
+        <div class="appt-icon">📅</div>
+        <div class="appt-info">
+          <h3>Next Appointment</h3>
+          <p id="appt-detail"></p>
+        </div>
+      </div>
+
+      <!-- Bottom Navigation -->
+      <nav class="bottom-nav">
+        <button class="nav-btn active" data-screen="home">
+          <span class="nav-icon">🏠</span>
+          <span class="nav-label">Home</span>
+        </button>
+        <button class="nav-btn" data-screen="meds-list">
+          <span class="nav-icon">💊</span>
+          <span class="nav-label">Meds</span>
+        </button>
+        <button class="nav-btn" data-screen="trends">
+          <span class="nav-icon">📈</span>
+          <span class="nav-label">Trends</span>
+        </button>
+        <button class="nav-btn" data-screen="care-info">
+          <span class="nav-icon">ℹ️</span>
+          <span class="nav-label">Care Plan</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- ═══════════ LOG WEIGHT SHEET ═══════════ -->
+    <div id="sheet-weight" class="bottom-sheet">
+      <div class="sheet-overlay"></div>
+      <div class="sheet-content glass-card">
+        <div class="sheet-handle"></div>
+        <h2>Log Weight</h2>
+        <p class="sheet-hint">Weigh yourself before eating or drinking</p>
+        <div class="weight-input-group">
+          <button class="adj-btn" id="weight-minus">−</button>
+          <input type="number" id="weight-value" step="0.1" min="20" max="200" value="70.0" inputmode="decimal">
+          <span class="unit">kg</span>
+          <button class="adj-btn" id="weight-plus">+</button>
+        </div>
+        <button id="btn-save-weight" class="btn-primary btn-large">Save Weight</button>
+        <p id="weight-feedback" class="feedback-text" hidden></p>
+      </div>
+    </div>
+
+    <!-- ═══════════ LOG BP SHEET ═══════════ -->
+    <div id="sheet-bp" class="bottom-sheet">
+      <div class="sheet-overlay"></div>
+      <div class="sheet-content glass-card">
+        <div class="sheet-handle"></div>
+        <h2>Log Blood Pressure</h2>
+        <div class="bp-input-row">
+          <div class="bp-field">
+            <label>Systolic (top)</label>
+            <input type="number" id="bp-systolic" min="60" max="250" value="120" inputmode="numeric">
+          </div>
+          <span class="bp-slash">/</span>
+          <div class="bp-field">
+            <label>Diastolic (bottom)</label>
+            <input type="number" id="bp-diastolic" min="30" max="150" value="80" inputmode="numeric">
+          </div>
+        </div>
+        <button id="btn-save-bp" class="btn-primary btn-large">Save BP</button>
+        <p id="bp-feedback" class="feedback-text" hidden></p>
+      </div>
+    </div>
+
+    <!-- ═══════════ SYMPTOM CHECK SHEET ═══════════ -->
+    <div id="sheet-symptoms" class="bottom-sheet">
+      <div class="sheet-overlay"></div>
+      <div class="sheet-content glass-card">
+        <div class="sheet-handle"></div>
+        <h2>Evening Symptom Check</h2>
+        <p class="sheet-hint">Select any symptoms you experienced today</p>
+        <div class="symptom-list" id="symptom-list">
+          <label class="symptom-option"><input type="checkbox" value="increasing leg swelling"> Leg swelling</label>
+          <label class="symptom-option"><input type="checkbox" value="worsening breathlessness"> Breathlessness</label>
+          <label class="symptom-option"><input type="checkbox" value="chest pain"> Chest pain</label>
+          <label class="symptom-option"><input type="checkbox" value="dizziness or fainting"> Dizziness / Fainting</label>
+          <label class="symptom-option"><input type="checkbox" value="persistent cough"> Persistent cough</label>
+          <label class="symptom-option"><input type="checkbox" value="fatigue"> Unusual fatigue</label>
+          <label class="symptom-option none-option"><input type="checkbox" id="symptom-none" value="none"> None — I feel fine</label>
+        </div>
+        <button id="btn-save-symptoms" class="btn-primary btn-large">Submit</button>
+        <p id="symptom-feedback" class="feedback-text" hidden></p>
+      </div>
+    </div>
+
+    <!-- ═══════════ MEDICATIONS LIST SCREEN ═══════════ -->
+    <div id="screen-meds-list" class="screen">
+      <header class="top-bar">
+        <button class="back-btn" data-back="home">← Back</button>
+        <h2>Today's Medications</h2>
+      </header>
+      <div id="meds-list-container" class="meds-container"></div>
+      <nav class="bottom-nav">
+        <button class="nav-btn" data-screen="home"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></button>
+        <button class="nav-btn active" data-screen="meds-list"><span class="nav-icon">💊</span><span class="nav-label">Meds</span></button>
+        <button class="nav-btn" data-screen="trends"><span class="nav-icon">📈</span><span class="nav-label">Trends</span></button>
+        <button class="nav-btn" data-screen="care-info"><span class="nav-icon">ℹ️</span><span class="nav-label">Care Plan</span></button>
+      </nav>
+    </div>
+
+    <!-- ═══════════ TRENDS SCREEN ═══════════ -->
+    <div id="screen-trends" class="screen">
+      <header class="top-bar">
+        <button class="back-btn" data-back="home">← Back</button>
+        <h2>My Trends</h2>
+      </header>
+      <div class="trends-content">
+        <div class="trend-section glass-card">
+          <h3>Weight (last 7 days)</h3>
+          <canvas id="chart-weight" height="200"></canvas>
+          <p id="weight-trend-summary" class="trend-summary"></p>
+        </div>
+        <div class="trend-section glass-card">
+          <h3>Blood Pressure (last 7 days)</h3>
+          <canvas id="chart-bp" height="200"></canvas>
+        </div>
+      </div>
+      <nav class="bottom-nav">
+        <button class="nav-btn" data-screen="home"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></button>
+        <button class="nav-btn" data-screen="meds-list"><span class="nav-icon">💊</span><span class="nav-label">Meds</span></button>
+        <button class="nav-btn active" data-screen="trends"><span class="nav-icon">📈</span><span class="nav-label">Trends</span></button>
+        <button class="nav-btn" data-screen="care-info"><span class="nav-icon">ℹ️</span><span class="nav-label">Care Plan</span></button>
+      </nav>
+    </div>
+
+    <!-- ═══════════ CARE PLAN INFO SCREEN ═══════════ -->
+    <div id="screen-care-info" class="screen">
+      <header class="top-bar">
+        <button class="back-btn" data-back="home">← Back</button>
+        <h2>My Care Plan</h2>
+      </header>
+      <div class="care-info-content" id="care-info-content">
+        <div class="phase-card glass-card" id="phase-current"></div>
+        <div class="warning-card glass-card">
+          <h3 class="warn-heading">Warning Signs</h3>
+          <ul id="warning-signs-list"></ul>
+        </div>
+        <div class="emergency-card glass-card">
+          <h3 class="emergency-heading">Emergency Signs</h3>
+          <ul id="emergency-signs-list"></ul>
+          <p class="emergency-action">Call your care team or go to the ER immediately.</p>
+        </div>
+      </div>
+      <nav class="bottom-nav">
+        <button class="nav-btn" data-screen="home"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></button>
+        <button class="nav-btn" data-screen="meds-list"><span class="nav-icon">💊</span><span class="nav-label">Meds</span></button>
+        <button class="nav-btn" data-screen="trends"><span class="nav-icon">📈</span><span class="nav-label">Trends</span></button>
+        <button class="nav-btn active" data-screen="care-info"><span class="nav-icon">ℹ️</span><span class="nav-label">Care Plan</span></button>
+      </nav>
+    </div>
+
+  </div>
+
+  <script src="/static/patient.js?v={{ v }}"></script>
+</body>
+</html>

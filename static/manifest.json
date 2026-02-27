@@ -1,0 +1,22 @@
+{
+  "name": "Sidiya — My Care",
+  "short_name": "Sidiya",
+  "description": "Post-discharge care companion for CHF patients",
+  "start_url": "/patient",
+  "display": "standalone",
+  "background_color": "#080e1a",
+  "theme_color": "#080e1a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

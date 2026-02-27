@@ -21,5 +21,14 @@ class Settings:
     landing_parse_model: str = os.getenv("LANDINGAI_PARSE_MODEL", "")
     landing_api_base: str = os.getenv("LANDINGAI_API_BASE", "https://api.va.landing.ai")
 
+    # Firebase
+    firebase_credentials_path: str = os.getenv("FIREBASE_CREDENTIALS_PATH", "firebase-admin-key.json")
+    firebase_project_id: str = os.getenv("FIREBASE_PROJECT_ID", "sidiya-672f1")
+
+    # Twilio SMS
+    twilio_account_sid: str | None = os.getenv("TWILIO_ACCOUNT_SID")
+    twilio_auth_token: str | None = os.getenv("TWILIO_AUTH_TOKEN")
+    twilio_phone_number: str | None = os.getenv("TWILIO_PHONE_NUMBER")
+
 
 settings = Settings()

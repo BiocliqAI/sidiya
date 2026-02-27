@@ -22,3 +22,6 @@ __pycache__/
 # Data/artifacts
 output/
 *.pdf
+
+# Firebase Admin SDK key
+firebase-admin-key.json

@@ -1,0 +1,366 @@
+/* ==========================================================================
+   SIDIYA Patient PWA — Mobile-first, accessible for elderly CHF patients
+   Extends the Midnight Clinical design system
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Sora:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --bg-deep:    #080e1a;
+  --bg-base:    #0c1222;
+  --bg-raised:  #131b30;
+  --bg-surface: #1a2340;
+  --bg-glass:   rgba(19, 27, 48, 0.72);
+
+  --accent:      #00d4aa;
+  --accent-glow: rgba(0, 212, 170, 0.18);
+  --accent-dim:  #0a8c72;
+
+  --gold:       #f0c761;
+  --gold-dim:   rgba(240, 199, 97, 0.15);
+
+  --danger:     #ff5c6c;
+  --danger-dim: rgba(255, 92, 108, 0.12);
+  --warn:       #f0a030;
+  --warn-dim:   rgba(240, 160, 48, 0.12);
+
+  --success:    #00d4aa;
+  --success-dim: rgba(0, 212, 170, 0.12);
+
+  --text:       #e4e9f0;
+  --text-soft:  #97a4b8;
+  --text-muted: #5e6d85;
+
+  --border:     rgba(255, 255, 255, 0.06);
+  --border-lit: rgba(0, 212, 170, 0.15);
+
+  --radius:     16px;
+  --radius-sm:  10px;
+  --radius-xs:  6px;
+
+  --shadow:     0 8px 32px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-sm:  0 2px 12px rgba(0, 0, 0, 0.25);
+
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-body:    'Sora', system-ui, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 18px;  /* Large base for elderly */
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg-deep);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---------- UTILITIES ---------- */
+
+.glass-card {
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.error-text { color: var(--danger); font-size: 14px; margin-top: 8px; }
+.feedback-text { font-size: 15px; margin-top: 12px; text-align: center; }
+.feedback-text.success { color: var(--success); }
+.feedback-text.warning { color: var(--warn); }
+.feedback-text.danger { color: var(--danger); }
+
+/* ---------- SCREENS ---------- */
+
+.screen { display: none; min-height: 100dvh; padding-bottom: 90px; }
+.screen.active { display: block; animation: fadeIn 0.3s ease; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ═══════════ LOGIN ═══════════ */
+
+.login-container {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 100dvh; padding: 32px 24px;
+}
+
+.login-logo { text-align: center; margin-bottom: 48px; }
+.login-logo .brand {
+  font-family: var(--font-display);
+  font-size: 56px;
+  color: var(--accent);
+  letter-spacing: -1px;
+}
+.login-logo .tagline { color: var(--text-soft); font-size: 16px; margin-top: 4px; }
+
+.login-form {
+  width: 100%; max-width: 400px; padding: 32px 24px;
+}
+.login-form label { display: block; font-size: 14px; color: var(--text-soft); margin-bottom: 8px; font-weight: 500; }
+.login-form input {
+  width: 100%; padding: 16px; font-size: 20px;
+  background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text); font-family: var(--font-body);
+  letter-spacing: 1px;
+}
+.login-form input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+/* ---------- BUTTONS ---------- */
+
+.btn-primary {
+  display: block; width: 100%; padding: 18px; margin-top: 20px;
+  font-size: 18px; font-weight: 600; font-family: var(--font-body);
+  color: var(--bg-deep); background: var(--accent);
+  border: none; border-radius: var(--radius-sm); cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 56px;
+}
+.btn-primary:hover { background: #00eabb; transform: translateY(-1px); }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.btn-large { padding: 20px; font-size: 20px; min-height: 64px; }
+
+/* ═══════════ TOP BAR ═══════════ */
+
+.top-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 20px 12px; position: sticky; top: 0; z-index: 10;
+  background: linear-gradient(to bottom, var(--bg-deep) 70%, transparent);
+}
+
+.greeting { font-family: var(--font-display); font-size: 28px; color: var(--text); }
+.sub-greeting { color: var(--text-soft); font-size: 15px; }
+
+.day-badge {
+  background: var(--accent-glow); color: var(--accent);
+  padding: 8px 16px; border-radius: 20px;
+  font-size: 14px; font-weight: 600;
+  border: 1px solid var(--border-lit);
+}
+
+.back-btn {
+  background: none; border: none; color: var(--accent);
+  font-size: 16px; font-family: var(--font-body); cursor: pointer;
+  padding: 8px 0;
+}
+
+/* ═══════════ TASK CARDS ═══════════ */
+
+.task-cards { padding: 8px 16px; display: flex; flex-direction: column; gap: 12px; }
+
+.task-card {
+  display: flex; align-items: center; gap: 16px;
+  padding: 20px; border-radius: var(--radius);
+  background: var(--bg-raised); border: 1px solid var(--border);
+  cursor: pointer; transition: all 0.2s ease;
+  min-height: 72px;
+}
+.task-card:active { transform: scale(0.98); background: var(--bg-surface); }
+.task-card.done { border-color: var(--border-lit); }
+
+.task-icon { font-size: 32px; flex-shrink: 0; width: 48px; text-align: center; }
+.task-info { flex: 1; }
+.task-info h3 { font-size: 18px; font-weight: 600; }
+.task-status { font-size: 14px; color: var(--text-muted); margin-top: 2px; }
+.task-status.done { color: var(--success); }
+.task-status.alert { color: var(--danger); }
+
+.task-chevron { font-size: 28px; color: var(--text-muted); font-weight: 300; }
+
+/* ═══════════ APPOINTMENT CARD ═══════════ */
+
+.appointment-card {
+  margin: 16px; padding: 20px;
+  display: flex; gap: 16px; align-items: center;
+}
+.appt-icon { font-size: 32px; }
+.appt-info h3 { font-size: 16px; color: var(--gold); font-weight: 600; }
+.appt-info p { font-size: 14px; color: var(--text-soft); margin-top: 4px; }
+
+/* ═══════════ BOTTOM SHEET ═══════════ */
+
+.bottom-sheet {
+  display: none; position: fixed; inset: 0; z-index: 100;
+}
+.bottom-sheet.open { display: block; animation: fadeIn 0.2s ease; }
+
+.sheet-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.sheet-content {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 24px 20px 40px;
+  border-radius: 24px 24px 0 0;
+  max-height: 85dvh; overflow-y: auto;
+  animation: slideUp 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.sheet-handle {
+  width: 40px; height: 4px; background: var(--text-muted); border-radius: 2px;
+  margin: 0 auto 20px;
+}
+
+.sheet-content h2 { font-family: var(--font-display); font-size: 28px; margin-bottom: 4px; }
+.sheet-hint { color: var(--text-soft); font-size: 14px; margin-bottom: 24px; }
+
+/* Weight input */
+.weight-input-group {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  margin: 24px 0;
+}
+.weight-input-group input {
+  width: 140px; text-align: center; font-size: 48px; font-weight: 700;
+  background: var(--bg-surface); border: 2px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text); padding: 16px 8px;
+  font-family: var(--font-body);
+}
+.weight-input-group input:focus { border-color: var(--accent); outline: none; }
+.weight-input-group .unit { font-size: 24px; color: var(--text-soft); }
+
+.adj-btn {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--bg-surface); border: 1px solid var(--border);
+  color: var(--text); font-size: 28px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s ease;
+}
+.adj-btn:active { background: var(--accent-dim); }
+
+/* BP input */
+.bp-input-row {
+  display: flex; align-items: flex-end; justify-content: center; gap: 12px;
+  margin: 24px 0;
+}
+.bp-field { text-align: center; }
+.bp-field label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+.bp-field input {
+  width: 100px; text-align: center; font-size: 36px; font-weight: 700;
+  background: var(--bg-surface); border: 2px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text); padding: 12px 8px;
+  font-family: var(--font-body);
+}
+.bp-field input:focus { border-color: var(--accent); outline: none; }
+.bp-slash { font-size: 36px; color: var(--text-muted); margin-bottom: 12px; }
+
+/* Symptom list */
+.symptom-list { display: flex; flex-direction: column; gap: 8px; margin: 16px 0; }
+.symptom-option {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px; border-radius: var(--radius-sm);
+  background: var(--bg-surface); border: 1px solid var(--border);
+  font-size: 16px; cursor: pointer; transition: all 0.15s ease;
+  min-height: 52px;
+}
+.symptom-option:has(input:checked) { border-color: var(--accent); background: var(--accent-glow); }
+.symptom-option.none-option:has(input:checked) { border-color: var(--success); background: var(--success-dim); }
+.symptom-option input { width: 20px; height: 20px; accent-color: var(--accent); }
+
+/* ═══════════ MEDICATIONS LIST ═══════════ */
+
+.meds-container { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+.med-time-group h3 {
+  font-size: 14px; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 1px; margin: 16px 0 8px; padding-left: 4px;
+}
+
+.med-item {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px; border-radius: var(--radius-sm);
+  background: var(--bg-raised); border: 1px solid var(--border);
+  min-height: 64px;
+}
+.med-item.taken { border-color: var(--border-lit); opacity: 0.7; }
+
+.med-check {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 2px solid var(--text-muted); background: transparent;
+  cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s ease;
+}
+.med-check.checked { background: var(--success); border-color: var(--success); }
+.med-check.checked::after { content: '✓'; color: var(--bg-deep); font-size: 16px; font-weight: 700; }
+
+.med-details { flex: 1; }
+.med-name { font-size: 16px; font-weight: 600; }
+.med-dose { font-size: 13px; color: var(--text-soft); }
+.med-indication { font-size: 12px; color: var(--text-muted); font-style: italic; }
+
+.med-skip-btn {
+  background: none; border: 1px solid var(--border);
+  color: var(--text-muted); font-size: 12px;
+  padding: 6px 10px; border-radius: var(--radius-xs);
+  cursor: pointer; font-family: var(--font-body);
+}
+.med-skip-btn:hover { border-color: var(--warn); color: var(--warn); }
+
+/* ═══════════ TRENDS ═══════════ */
+
+.trends-content { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.trend-section { padding: 20px; }
+.trend-section h3 { font-size: 16px; color: var(--text-soft); margin-bottom: 12px; }
+.trend-summary { font-size: 14px; color: var(--text-soft); margin-top: 8px; }
+
+canvas { width: 100% !important; }
+
+/* ═══════════ CARE PLAN INFO ═══════════ */
+
+.care-info-content { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+
+.phase-card { padding: 20px; }
+.phase-card h3 { font-family: var(--font-display); font-size: 22px; margin-bottom: 8px; }
+.phase-card .phase-label { color: var(--accent); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+.phase-card ul { margin-top: 12px; padding-left: 20px; }
+.phase-card li { margin-bottom: 6px; font-size: 15px; color: var(--text-soft); }
+
+.warning-card, .emergency-card { padding: 20px; }
+.warn-heading { color: var(--warn); font-size: 18px; margin-bottom: 8px; }
+.emergency-heading { color: var(--danger); font-size: 18px; margin-bottom: 8px; }
+.warning-card ul, .emergency-card ul { padding-left: 20px; }
+.warning-card li { color: var(--warn); font-size: 15px; margin-bottom: 4px; }
+.emergency-card li { color: var(--danger); font-size: 15px; margin-bottom: 4px; }
+.emergency-action { color: var(--danger); font-weight: 600; font-size: 15px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--danger-dim); }
+
+/* ═══════════ BOTTOM NAVIGATION ═══════════ */
+
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  display: flex; justify-content: space-around;
+  background: var(--bg-raised); border-top: 1px solid var(--border);
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  z-index: 50;
+}
+
+.nav-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: none; border: none; color: var(--text-muted);
+  font-family: var(--font-body); cursor: pointer; padding: 8px 16px;
+  min-width: 64px; min-height: 48px;
+}
+.nav-btn.active { color: var(--accent); }
+.nav-icon { font-size: 22px; }
+.nav-label { font-size: 11px; font-weight: 500; }
+
+/* ═══════════ RESPONSIVE ═══════════ */
+
+@media (min-width: 600px) {
+  .task-cards { max-width: 500px; margin: 0 auto; }
+  .meds-container { max-width: 500px; margin: 0 auto; }
+  .sheet-content { max-width: 500px; margin: 0 auto; }
+  .login-container { max-width: 460px; margin: 0 auto; }
+}
