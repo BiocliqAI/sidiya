@@ -1,5 +1,6 @@
 /* ==========================================================================
    Sidiya Provider Dashboard — Client-side logic
+   Unified flow: Upload PDF → Review Extraction → Register Patient
    ========================================================================== */
 
 (function () {
@@ -7,6 +8,15 @@
 
   function $(sel) { return document.querySelector(sel); }
   function $$(sel) { return document.querySelectorAll(sel); }
+
+  function escapeHtml(v) {
+    return String(v ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
 
   async function apiFetch(path, opts = {}) {
     const res = await fetch(path, {
@@ -21,12 +31,205 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Register Patient
+  // Upload PDF
+  // ---------------------------------------------------------------------------
+  let currentExtractionData = null;
+  let currentExtractionId = null;
+
+  function initUpload() {
+    const dropZone = $('#drop-zone');
+    const pdfInput = $('#pdf-input');
+
+    // Click to browse
+    dropZone.addEventListener('click', () => pdfInput.click());
+
+    // File selected via input
+    pdfInput.addEventListener('change', () => {
+      if (pdfInput.files && pdfInput.files[0]) {
+        uploadPdf(pdfInput.files[0]);
+      }
+    });
+
+    // Drag & drop
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('drag-over');
+    });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file && file.type === 'application/pdf') {
+        uploadPdf(file);
+      } else {
+        showUploadError('Please upload a PDF file.');
+      }
+    });
+
+    // "Upload Another" button
+    $('#btn-new-upload').addEventListener('click', resetToUpload);
+  }
+
+  async function uploadPdf(file) {
+    const statusBox = $('#upload-status');
+    const statusText = $('#upload-status-text');
+    const progressFill = $('#progress-fill');
+
+    // Show progress
+    statusBox.hidden = false;
+    statusText.textContent = `Extracting "${file.name}"... (Landing OCR + Gemini)`;
+    statusText.className = '';
+    progressFill.style.width = '0%';
+
+    // Animate progress bar (fake progress while waiting)
+    let progress = 0;
+    const progressTimer = setInterval(() => {
+      progress = Math.min(progress + Math.random() * 8, 90);
+      progressFill.style.width = progress + '%';
+    }, 500);
+
+    const fd = new FormData();
+    fd.append('pdf', file);
+
+    try {
+      const res = await fetch('/extract', { method: 'POST', body: fd });
+      clearInterval(progressTimer);
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: 'Extraction failed' }));
+        throw new Error(err.detail || 'Extraction failed');
+      }
+
+      const data = await res.json();
+      progressFill.style.width = '100%';
+      statusText.textContent = 'Extraction complete!';
+
+      currentExtractionData = data;
+      currentExtractionId = data.extraction_id;
+
+      // Short delay then show review
+      setTimeout(() => showReviewStep(data), 600);
+
+    } catch (err) {
+      clearInterval(progressTimer);
+      showUploadError(err.message);
+    }
+  }
+
+  function showUploadError(msg) {
+    const statusText = $('#upload-status-text');
+    const statusBox = $('#upload-status');
+    statusBox.hidden = false;
+    statusText.textContent = `Error: ${msg}`;
+    statusText.className = 'error-text';
+    $('#progress-fill').style.width = '0%';
+  }
+
+  function resetToUpload() {
+    currentExtractionData = null;
+    currentExtractionId = null;
+
+    $('#upload-step').hidden = false;
+    $('#review-step').hidden = true;
+    $('#upload-status').hidden = true;
+    $('#pdf-input').value = '';
+    $('#register-form').reset();
+    $('#reg-feedback').hidden = true;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Review Extraction
+  // ---------------------------------------------------------------------------
+  function showReviewStep(data) {
+    $('#upload-step').hidden = true;
+    $('#review-step').hidden = false;
+
+    const extractionId = data.extraction_id;
+    $('#reg-extraction-id').value = extractionId || '';
+
+    // Summary
+    const patient = data.patient || {};
+    const episode = data.clinical_episode || {};
+    const encounter = data.encounter || {};
+    const firstAppt = (data.follow_up?.appointments || [])[0] || {};
+    const meds = data.medications?.discharge_medications || [];
+    const validation = data.validation || {};
+
+    const summaryHtml = `
+      <div class="review-grid">
+        <div class="review-kv"><span class="rk">Patient</span><span class="rv">${escapeHtml(patient.full_name || 'Unknown')}</span></div>
+        <div class="review-kv"><span class="rk">DOB</span><span class="rv">${escapeHtml(patient.dob || 'NA')}</span></div>
+        <div class="review-kv"><span class="rk">MRN</span><span class="rv">${escapeHtml(patient.mrn || 'NA')}</span></div>
+        <div class="review-kv"><span class="rk">Primary Dx</span><span class="rv">${escapeHtml(episode.primary_diagnosis || 'NA')}</span></div>
+        <div class="review-kv"><span class="rk">Discharge</span><span class="rv">${escapeHtml(encounter.discharge_datetime || 'NA')}</span></div>
+        <div class="review-kv"><span class="rk">Follow-up</span><span class="rv">${escapeHtml(firstAppt.scheduled_datetime || 'NA')} — ${escapeHtml(firstAppt.provider_name || '')}</span></div>
+        <div class="review-kv"><span class="rk">Medications</span><span class="rv">${meds.length} discharge medications</span></div>
+        <div class="review-kv"><span class="rk">App Ready</span><span class="rv ${validation.ready_for_patient_app ? 'text-accent' : 'text-warn'}">${validation.ready_for_patient_app ? 'Yes' : 'No — review missing fields'}</span></div>
+      </div>
+    `;
+    $('#review-summary').innerHTML = summaryHtml;
+
+    // Medications table
+    if (meds.length) {
+      $('#review-meds').innerHTML = `
+        <h4>Medications (${meds.length})</h4>
+        <div class="mini-table-wrap">
+          <table class="mini-table">
+            <thead><tr><th>Name</th><th>Dose</th><th>Route</th><th>Frequency</th></tr></thead>
+            <tbody>${meds.map(m => `
+              <tr>
+                <td>${escapeHtml(m.medication_name || 'NA')}</td>
+                <td>${escapeHtml(m.dose || 'NA')}</td>
+                <td>${escapeHtml(m.route || 'NA')}</td>
+                <td>${escapeHtml(m.frequency || 'NA')}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    } else {
+      $('#review-meds').innerHTML = '<p class="text-muted">No medications extracted.</p>';
+    }
+
+    // Care plan phases
+    const cp = data.care_plan_90d || {};
+    const phases = ['phase_0_7', 'phase_8_30', 'phase_31_90'];
+    const phaseLabels = { phase_0_7: 'Days 0\u20137', phase_8_30: 'Days 8\u201330', phase_31_90: 'Days 31\u201390' };
+    let cpHtml = '<h4>90-Day Care Plan</h4>';
+    phases.forEach(p => {
+      const items = cp[p] || [];
+      if (items.length) {
+        cpHtml += `<div class="cp-phase"><span class="cp-label">${phaseLabels[p]}</span><ul>${items.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul></div>`;
+      }
+    });
+    $('#review-care-plan').innerHTML = cpHtml;
+
+    // Links
+    if (extractionId) {
+      $('#review-link-careplan').href = `/care-plan?id=${encodeURIComponent(extractionId)}`;
+      $('#review-link-calendar').href = `/calendar-view?id=${encodeURIComponent(extractionId)}`;
+      $('#review-link-summary').href = `/summary/${encodeURIComponent(extractionId)}`;
+    }
+
+    // Pre-fill phone if extracted
+    const extractedPhone = data.extracted_details?.patient?.phone;
+    if (extractedPhone) {
+      $('#reg-phone').value = extractedPhone;
+    }
+
+    // Refresh extractions list
+    loadExtractions();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Register Patient (from reviewed extraction)
   // ---------------------------------------------------------------------------
   function initRegisterForm() {
     $('#register-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const extractionId = parseInt($('#reg-extraction-id').value, 10);
+      const extractionId = $('#reg-extraction-id').value.trim();
       const phone = $('#reg-phone').value.trim();
       const caregiverPhone = $('#reg-caregiver-phone').value.trim() || null;
       const nursePhone = $('#reg-nurse-phone').value.trim() || null;
@@ -52,8 +255,8 @@
           `Registered ${res.full_name} (ID: ${res.patient_id}). Created ${total} reminder rules.`,
           'success'
         );
-        $('#register-form').reset();
         loadPatients();
+        loadExtractions();
       } catch (err) {
         showRegFeedback(err.message, 'error');
       }
@@ -65,7 +268,70 @@
     el.textContent = msg;
     el.className = `reg-feedback ${type}`;
     el.hidden = false;
-    setTimeout(() => { el.hidden = true; }, 8000);
+    setTimeout(() => { el.hidden = true; }, 10000);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Recent Extractions List
+  // ---------------------------------------------------------------------------
+  async function loadExtractions() {
+    try {
+      const data = await apiFetch('/api/extractions?limit=20');
+      const items = data.items || [];
+      renderExtractions(items);
+    } catch (err) {
+      $('#extractions-list').innerHTML = `<p class="empty-state">${escapeHtml(err.message)}</p>`;
+    }
+  }
+
+  function renderExtractions(items) {
+    const container = $('#extractions-list');
+    if (!items.length) {
+      container.innerHTML = '<p class="empty-state">No extractions yet. Upload a discharge summary above.</p>';
+      return;
+    }
+
+    container.innerHTML = items.map(item => {
+      const status = item.status || 'extracted';
+      const statusClass = status === 'registered' ? 'status-registered' : 'status-extracted';
+      const statusLabel = status === 'registered' ? 'Registered' : 'Pending Registration';
+      const created = item.created_at ? new Date(item.created_at).toLocaleString() : '';
+
+      return `
+        <div class="extraction-row ${statusClass}" data-id="${escapeHtml(item.id)}">
+          <div class="extraction-info">
+            <div class="extraction-name">${escapeHtml(item.patient_name || 'Unknown Patient')}</div>
+            <div class="extraction-meta">${escapeHtml(item.primary_diagnosis || 'NA')} \u2014 ${escapeHtml(item.source_file_name || '')}</div>
+          </div>
+          <div class="extraction-date">${escapeHtml(created)}</div>
+          <div class="extraction-status-badge ${statusClass}">${statusLabel}</div>
+          <div class="extraction-actions">
+            <a href="/care-plan?id=${encodeURIComponent(item.id)}" target="_blank" class="action-link">Care Plan</a>
+            <a href="/calendar-view?id=${encodeURIComponent(item.id)}" target="_blank" class="action-link">Calendar</a>
+            ${status !== 'registered' ? `<button class="btn-small btn-register-from-list" data-id="${escapeHtml(item.id)}">Register</button>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+
+    // "Register" buttons in extraction list
+    container.querySelectorAll('.btn-register-from-list').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        try {
+          const record = await apiFetch(`/api/extractions/${encodeURIComponent(id)}`);
+          const data = record.extraction_json || {};
+          data.extraction_id = record.id;
+          data.simplified_summary = record.simplified_summary;
+          currentExtractionData = data;
+          currentExtractionId = record.id;
+          showReviewStep(data);
+          $('#review-step').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } catch (err) {
+          alert('Failed to load extraction: ' + err.message);
+        }
+      });
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -91,7 +357,7 @@
         <div class="alert-item" data-id="${a.id}">
           <div class="alert-info">
             <div class="alert-patient">${a.patient_name || 'Unknown'}</div>
-            <div class="alert-type">${formatTrigger(a.trigger_type)} — Level ${a.level || 0}</div>
+            <div class="alert-type">${formatTrigger(a.trigger_type)} \u2014 Level ${a.level || 0}</div>
           </div>
           <button class="btn-ack" data-esc-id="${a.id}">Acknowledge</button>
         </div>
@@ -144,7 +410,7 @@
     const container = $('#patient-list');
 
     if (!patients.length) {
-      container.innerHTML = '<p class="empty-state">No patients registered yet. Use the form above to register a patient from an extraction.</p>';
+      container.innerHTML = '<p class="empty-state">No patients registered yet. Upload a discharge summary and register a patient above.</p>';
       return;
     }
 
@@ -160,7 +426,7 @@
           <div class="status-dot ${p.status}"></div>
           <div>
             <div class="patient-name">${p.full_name || 'Unknown'}</div>
-            <div class="patient-diagnosis">${p.primary_diagnosis || 'CHF'} — ${medText}</div>
+            <div class="patient-diagnosis">${p.primary_diagnosis || 'CHF'} \u2014 ${medText}</div>
           </div>
           <div class="patient-day">Day ${p.care_plan_day}</div>
           <div class="patient-compliance ${p.status}">${score}%</div>
@@ -188,15 +454,10 @@
 
       $('#modal-patient-name').textContent = todayData.full_name || 'Patient';
       $('#modal-patient-meta').textContent =
-        `Day ${todayData.care_plan_day} — Phase ${todayData.phase} — ${todayData.date}`;
+        `Day ${todayData.care_plan_day} \u2014 Phase ${todayData.phase} \u2014 ${todayData.date}`;
 
-      // Today's actions
       renderTodayActions(todayData);
-
-      // Weight chart
       renderModalWeightChart(vitalsData.weight || []);
-
-      // Compliance summary
       renderComplianceSummary(vitalsData.compliance || []);
 
     } catch (err) {
@@ -209,29 +470,25 @@
     const container = $('#modal-today-actions');
     const actions = [];
 
-    // Weight
     const wStatus = data.vitals.weight_logged ? 'done' : 'pending';
     const wText = data.vitals.weight_logged ? `${data.vitals.weight_value} kg` : 'Not logged';
-    actions.push({ time: '07:30', icon: '⚖️', desc: `Weight: ${wText}`, status: wStatus });
+    actions.push({ time: '07:30', icon: '\u2696\uFE0F', desc: `Weight: ${wText}`, status: wStatus });
 
-    // BP
     const bStatus = data.vitals.bp_logged ? 'done' : 'pending';
-    actions.push({ time: '08:30', icon: '🩺', desc: `BP: ${bStatus === 'done' ? 'Logged' : 'Not logged'}`, status: bStatus });
+    actions.push({ time: '08:30', icon: '\uD83E\uDE7A', desc: `BP: ${bStatus === 'done' ? 'Logged' : 'Not logged'}`, status: bStatus });
 
-    // Medications
     (data.medications || []).forEach(m => {
       const s = m.status === 'taken' ? 'done' : m.status === 'skipped' ? 'missed' : 'pending';
       actions.push({
         time: m.scheduled_time,
-        icon: '💊',
+        icon: '\uD83D\uDC8A',
         desc: `${m.medication_name} (${m.dose || ''})`,
         status: s,
       });
     });
 
-    // Symptom check
     const sStatus = data.vitals.symptom_check_done ? 'done' : 'pending';
-    actions.push({ time: '19:00', icon: '📋', desc: 'Symptom check', status: sStatus });
+    actions.push({ time: '19:00', icon: '\uD83D\uDCCB', desc: 'Symptom check', status: sStatus });
 
     actions.sort((a, b) => a.time.localeCompare(b.time));
 
@@ -240,7 +497,7 @@
         <span class="icon">${a.icon}</span>
         <span class="time">${a.time}</span>
         <span class="desc">${a.desc}</span>
-        <span class="status-check ${a.status}">${a.status === 'done' ? '✓' : a.status === 'missed' ? '✗' : '—'}</span>
+        <span class="status-check ${a.status}">${a.status === 'done' ? '\u2713' : a.status === 'missed' ? '\u2717' : '\u2014'}</span>
       </div>
     `).join('');
   }
@@ -270,7 +527,6 @@
     const plotW = w - pad.left - pad.right;
     const plotH = 180 - pad.top - pad.bottom;
 
-    // Grid
     ctx.strokeStyle = 'rgba(255,255,255,0.06)';
     for (let i = 0; i <= 3; i++) {
       const y = pad.top + (plotH / 3) * i;
@@ -279,7 +535,6 @@
       ctx.fillText((max - (range / 3) * i).toFixed(1), 2, y + 3);
     }
 
-    // Line
     ctx.strokeStyle = '#00d4aa'; ctx.lineWidth = 2; ctx.lineJoin = 'round';
     ctx.beginPath();
     values.forEach((v, i) => {
@@ -289,7 +544,6 @@
     });
     ctx.stroke();
 
-    // Points + labels
     values.forEach((v, i) => {
       const x = pad.left + (plotW / Math.max(values.length - 1, 1)) * i;
       const y = pad.top + plotH - ((v - min) / range) * plotH;
@@ -314,7 +568,7 @@
         <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;">
           <span>${c.date}</span>
           <span>Meds: ${c.medications_taken || 0}/${c.medications_expected || 0}</span>
-          <span>Wt: ${c.weight_logged ? '✓' : '✗'}</span>
+          <span>Wt: ${c.weight_logged ? '\u2713' : '\u2717'}</span>
           <span class="patient-compliance ${cls}">${score}%</span>
         </div>`;
     }).join('');
@@ -324,14 +578,18 @@
   // Init
   // ---------------------------------------------------------------------------
   function init() {
+    initUpload();
     initRegisterForm();
     loadAlerts();
     loadPatients();
+    loadExtractions();
 
     $('#btn-refresh').addEventListener('click', () => {
       loadAlerts();
       loadPatients();
     });
+
+    $('#btn-refresh-extractions').addEventListener('click', loadExtractions);
 
     // Modal close
     $('#modal-close').addEventListener('click', () => { $('#patient-modal').hidden = true; });

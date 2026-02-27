@@ -33,35 +33,84 @@
       <div id="alerts-list" class="alerts-list"></div>
     </section>
 
-    <!-- Register Patient Form -->
+    <!-- ══════════ Upload & Register Flow ══════════ -->
     <section class="prov-section">
       <div class="section-header">
-        <h2>Register Patient</h2>
+        <h2>New Patient — Upload Discharge Summary</h2>
       </div>
-      <form id="register-form" class="register-form glass-panel">
-        <div class="form-row">
-          <div class="form-field">
-            <label>Extraction ID</label>
-            <input type="number" id="reg-extraction-id" placeholder="e.g. 5" required>
-          </div>
-          <div class="form-field">
-            <label>Patient Phone</label>
-            <input type="tel" id="reg-phone" placeholder="+91 98765 43210" required>
-          </div>
+
+      <!-- Step 1: Upload PDF -->
+      <div id="upload-step" class="glass-panel upload-panel">
+        <div class="upload-drop-zone" id="drop-zone">
+          <div class="upload-icon">📄</div>
+          <p class="upload-label">Drag &amp; drop a discharge summary PDF here</p>
+          <p class="upload-sublabel">or click to browse</p>
+          <input type="file" id="pdf-input" accept="application/pdf" hidden>
         </div>
-        <div class="form-row">
-          <div class="form-field">
-            <label>Caregiver Phone</label>
-            <input type="tel" id="reg-caregiver-phone" placeholder="+91 98765 43210">
-          </div>
-          <div class="form-field">
-            <label>Nurse Phone</label>
-            <input type="tel" id="reg-nurse-phone" placeholder="+91 98765 43210">
-          </div>
+        <div id="upload-status" class="upload-status" hidden>
+          <div class="upload-progress-bar"><div class="upload-progress-fill" id="progress-fill"></div></div>
+          <p id="upload-status-text">Processing...</p>
         </div>
-        <button type="submit" class="btn-register">Register & Create Reminders</button>
-        <p id="reg-feedback" class="reg-feedback" hidden></p>
-      </form>
+      </div>
+
+      <!-- Step 2: Review Extraction + Register -->
+      <div id="review-step" class="glass-panel review-panel" hidden>
+        <div class="review-header">
+          <h3>Extraction Result</h3>
+          <button type="button" class="btn-small btn-outline" id="btn-new-upload">Upload Another</button>
+        </div>
+
+        <div class="review-summary" id="review-summary"></div>
+
+        <details class="review-details">
+          <summary>View Medications &amp; Care Plan</summary>
+          <div id="review-meds" class="review-meds"></div>
+          <div id="review-care-plan" class="review-care-plan"></div>
+        </details>
+
+        <div class="review-links" id="review-links">
+          <a id="review-link-careplan" class="prov-link" href="#" target="_blank">Full Care Plan</a>
+          <a id="review-link-calendar" class="prov-link" href="#" target="_blank">90-Day Calendar</a>
+          <a id="review-link-summary" class="prov-link" href="#" target="_blank">Summary Page</a>
+        </div>
+
+        <hr class="divider">
+
+        <h3 class="register-title">Register Patient for Reminders</h3>
+        <form id="register-form" class="register-form">
+          <input type="hidden" id="reg-extraction-id" value="">
+          <div class="form-row">
+            <div class="form-field">
+              <label>Patient Phone</label>
+              <input type="tel" id="reg-phone" placeholder="+91 98765 43210" required>
+            </div>
+            <div class="form-field">
+              <label>Caregiver Phone</label>
+              <input type="tel" id="reg-caregiver-phone" placeholder="+91 98765 43210">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label>Nurse Phone</label>
+              <input type="tel" id="reg-nurse-phone" placeholder="+91 98765 43210">
+            </div>
+            <div class="form-field"></div>
+          </div>
+          <button type="submit" class="btn-register">Register &amp; Create Reminders</button>
+          <p id="reg-feedback" class="reg-feedback" hidden></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- Recent Extractions -->
+    <section class="prov-section">
+      <div class="section-header">
+        <h2>Recent Extractions</h2>
+        <button id="btn-refresh-extractions" class="btn-refresh">Refresh</button>
+      </div>
+      <div id="extractions-list" class="extractions-list">
+        <p class="empty-state">Loading...</p>
+      </div>
     </section>
 
     <!-- Patient List -->

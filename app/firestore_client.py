@@ -101,7 +101,7 @@ def get_patient_by_phone(phone: str) -> dict[str, Any] | None:
     return None
 
 
-def get_patient_by_extraction(extraction_id: int) -> dict[str, Any] | None:
+def get_patient_by_extraction(extraction_id: str) -> dict[str, Any] | None:
     """Fetch a patient by their extraction_id."""
     db = _get_db()
     docs = (
@@ -426,3 +426,100 @@ def list_patients_for_provider(provider_id: str) -> list[dict[str, Any]]:
         if p:
             patients.append(p)
     return patients
+
+
+# ---------------------------------------------------------------------------
+# Extractions  (replaces SQLite storage)
+# ---------------------------------------------------------------------------
+
+def save_extraction(extracted: dict[str, Any], simplified_summary: str) -> str:
+    """Save an extraction to Firestore. Returns the document ID (string)."""
+    import json
+
+    db = _get_db()
+
+    patient_name = ""
+    if isinstance(extracted.get("patient"), dict):
+        patient_name = str(extracted["patient"].get("full_name", "")).strip()
+
+    primary_diagnosis = ""
+    if isinstance(extracted.get("clinical_episode"), dict):
+        primary_diagnosis = str(extracted["clinical_episode"].get("primary_diagnosis", "")).strip()
+
+    followup_datetime = None
+    follow = extracted.get("follow_up", {})
+    if isinstance(follow, dict):
+        appointments = follow.get("appointments", [])
+        if isinstance(appointments, list) and appointments:
+            first = appointments[0]
+            if isinstance(first, dict):
+                followup_datetime = first.get("scheduled_datetime")
+
+    source_file = ""
+    source = extracted.get("source_document", {})
+    if isinstance(source, dict):
+        source_file = str(source.get("file_name", "")).strip()
+
+    data = {
+        "created_at": _now_utc(),
+        "source_file_name": source_file or "unknown.pdf",
+        "patient_name": patient_name or None,
+        "primary_diagnosis": primary_diagnosis or None,
+        "followup_datetime": followup_datetime,
+        "extraction_json": json.dumps(extracted, ensure_ascii=True),
+        "simplified_summary": simplified_summary,
+        "status": "extracted",  # extracted → registered
+    }
+    _, doc_ref = db.collection("extractions").add(data)
+    return doc_ref.id
+
+
+def get_extraction(extraction_id: str) -> dict[str, Any] | None:
+    """Fetch a single extraction by document ID."""
+    import json
+
+    db = _get_db()
+    doc = db.collection("extractions").document(extraction_id).get()
+    if not doc.exists:
+        return None
+    payload = doc.to_dict()
+    payload["id"] = doc.id
+    # Deserialize extraction_json string → dict
+    raw = payload.get("extraction_json")
+    if isinstance(raw, str):
+        try:
+            payload["extraction_json"] = json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            pass
+    return payload
+
+
+def list_extractions(limit: int = 100) -> list[dict[str, Any]]:
+    """List recent extractions (lightweight — no extraction_json blob)."""
+    db = _get_db()
+    docs = (
+        db.collection("extractions")
+        .order_by("created_at", direction=firestore.Query.DESCENDING)
+        .limit(max(1, min(limit, 500)))
+        .get()
+    )
+    results = []
+    for doc in docs:
+        d = doc.to_dict()
+        d["id"] = doc.id
+        # Convert Firestore Timestamp to ISO string for JSON serialization
+        created = d.get("created_at")
+        if hasattr(created, "isoformat"):
+            d["created_at"] = created.isoformat()
+        # Strip the heavy blob from listing
+        d.pop("extraction_json", None)
+        d.pop("simplified_summary", None)
+        results.append(d)
+    return results
+
+
+def update_extraction(extraction_id: str, data: dict[str, Any]) -> None:
+    """Update extraction fields (e.g. status → 'registered')."""
+    db = _get_db()
+    data["updated_at"] = _now_utc()
+    db.collection("extractions").document(extraction_id).update(data)

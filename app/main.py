@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from app.gemini_client import GeminiError
 from app.config import settings
 from app.pipeline import run_extraction
-from app.storage import get_extraction, init_db, list_extractions, save_extraction
+from app.storage import get_extraction, list_extractions, save_extraction
 from app.summary import build_simplified_summary
 
 logger = logging.getLogger(__name__)
@@ -58,7 +58,8 @@ async def add_cache_headers(request: Request, call_next):
 
 @app.on_event("startup")
 def startup_event() -> None:
-    init_db()
+    # Firestore needs no init; kept as hook for future startup tasks
+    pass
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -86,7 +87,7 @@ def history_page(request: Request) -> HTMLResponse:
 
 
 @app.get("/summary/{extraction_id}", response_class=HTMLResponse)
-def summary_page(request: Request, extraction_id: int) -> HTMLResponse:
+def summary_page(request: Request, extraction_id: str) -> HTMLResponse:
     record = get_extraction(extraction_id)
     if record is None:
         raise HTTPException(status_code=404, detail="Extraction not found")
@@ -141,7 +142,7 @@ def extractions_api(limit: int = Query(default=100, ge=1, le=500)) -> dict:
 
 
 @app.get("/api/extractions/{extraction_id}")
-def extraction_by_id_api(extraction_id: int) -> dict:
+def extraction_by_id_api(extraction_id: str) -> dict:
     record = get_extraction(extraction_id)
     if record is None:
         raise HTTPException(status_code=404, detail="Extraction not found")
@@ -178,7 +179,7 @@ async def extract(pdf: UploadFile = File(...)) -> dict:
 # ═══════════════════════════════════════════════════════════════════════════
 
 class PatientRegisterRequest(BaseModel):
-    extraction_id: int
+    extraction_id: str
     phone: str
     caregiver_phone: str | None = None
     nurse_phone: str | None = None
@@ -217,6 +218,9 @@ def register_patient(req: PatientRegisterRequest) -> dict:
         "care_plan_end_date": extraction.get("care_plan_90d", {}).get("end_date"),
     }
     patient_id = fdb.create_patient(patient_data)
+
+    # Mark extraction as registered
+    fdb.update_extraction(req.extraction_id, {"status": "registered", "patient_id": patient_id})
 
     # Generate reminder rules from extraction
     rule_counts = generate_reminder_rules(patient_id, extraction)
