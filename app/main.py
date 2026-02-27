@@ -405,7 +405,11 @@ def patient_vital_history(patient_id: str, vital_type: str = "weight", days: int
     """Get vital history for trend charts."""
     from app import firestore_client as fdb
     _get_patient_or_404(patient_id)
-    logs = fdb.get_vitals_range(patient_id, vital_type, days=min(days, 90))
+    try:
+        logs = fdb.get_vitals_range(patient_id, vital_type, days=min(days, 90))
+    except Exception as exc:
+        logger.warning("Vitals range query failed (index may be building): %s", exc)
+        logs = []
     return {"type": vital_type, "days": days, "logs": logs}
 
 
