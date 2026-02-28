@@ -85,20 +85,57 @@ function renderAlerts(){
   if(alertFilter==='critical')filtered=allAlerts.filter(a=>a._severity==='critical');
   if(alertFilter==='open')filtered=allAlerts.filter(a=>a.status==='open');
   if(!filtered.length){q.innerHTML='<div class="sidebar-empty">No alerts matching filter</div>';return;}
-  q.innerHTML=filtered.map(a=>`
-    <div class="alert-card severity-${a._severity}" data-id="${a.id}">
-      <div class="ac-top">
-        <span class="ac-patient">${esc(a.patient_name||'Unknown')}</span>
-        <span class="ac-time">${timeAgo(a.created_at)}</span>
+
+  // Group alerts by patient
+  const groups=new Map();
+  filtered.forEach(a=>{
+    const key=a.patient_id||a.patient_name||'unknown';
+    if(!groups.has(key))groups.set(key,{name:a.patient_name||'Unknown',alerts:[]});
+    groups.get(key).alerts.push(a);
+  });
+
+  // Sort groups: highest severity first, then by count
+  const sevRank={critical:3,warning:2,info:1};
+  const sorted=[...groups.values()].sort((a,b)=>{
+    const aMax=Math.max(...a.alerts.map(x=>sevRank[x._severity]||0));
+    const bMax=Math.max(...b.alerts.map(x=>sevRank[x._severity]||0));
+    return bMax-aMax||b.alerts.length-a.alerts.length;
+  });
+
+  q.innerHTML=sorted.map((g,gi)=>{
+    const topSev=g.alerts.reduce((s,a)=>sevRank[a._severity]>sevRank[s]?a._severity:s,'info');
+    const newest=g.alerts[0]?.created_at;
+    const cntClass=topSev==='critical'?'cnt-critical':topSev==='warning'?'cnt-warning':'cnt-info';
+    return `
+    <div class="alert-patient-group severity-${topSev}" data-group="${gi}">
+      <div class="apg-header">
+        <svg class="apg-chevron" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="apg-name">${esc(g.name)}</span>
+        <span class="apg-count ${cntClass}">${g.alerts.length}</span>
+        <span class="apg-time">${timeAgo(newest)}</span>
       </div>
-      <div class="ac-trigger">${esc(fmtTrigger(a.trigger_type))}</div>
-      <span class="ac-level lv-${Math.min(a.level||0,2)}">Level ${a.level||0}</span>
-      <div class="ac-actions">
-        <button class="ac-btn ac-btn-resolve" data-esc-id="${a.id}">Resolve</button>
-        <button class="ac-btn" data-esc-id="${a.id}" data-quick-ack="1">Quick Ack</button>
+      <div class="apg-body">
+        ${g.alerts.map(a=>`
+          <div class="alert-card severity-${a._severity}" data-id="${a.id}">
+            <div class="ac-top">
+              <span class="ac-trigger">${esc(fmtTrigger(a.trigger_type))}</span>
+              <span class="ac-time">${timeAgo(a.created_at)}</span>
+            </div>
+            <span class="ac-level lv-${Math.min(a.level||0,2)}">Level ${a.level||0}</span>
+            <div class="ac-actions">
+              <button class="ac-btn ac-btn-resolve" data-esc-id="${a.id}">Resolve</button>
+              <button class="ac-btn" data-esc-id="${a.id}" data-quick-ack="1">Ack</button>
+            </div>
+          </div>
+        `).join('')}
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
+
+  // Toggle group open/close
+  q.querySelectorAll('.apg-header').forEach(hdr=>{
+    hdr.addEventListener('click',()=>{hdr.parentElement.classList.toggle('open');});
+  });
 
   q.querySelectorAll('.ac-btn-resolve').forEach(btn=>{
     btn.addEventListener('click',e=>{e.stopPropagation();openAlertDrawer(btn.dataset.escId);});
