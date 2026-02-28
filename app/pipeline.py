@@ -526,7 +526,8 @@ def _normalize_to_schema(raw: dict[str, Any], ocr: dict[str, Any], pdf_name: str
         if not dt and heuristic_followup.get("date"):
             dt = _parse_datetime(str(heuristic_followup.get("date")))
 
-        status = a.get("status") if a.get("status") in {"scheduled", "requested", "pending", "completed", "cancelled", "unknown"} else "unknown"
+        raw_status = str(a.get("status", "unknown")).strip().lower()
+        status = raw_status if raw_status in {"scheduled", "requested", "pending", "completed", "cancelled", "unknown"} else "unknown"
         if dt and status in {"pending", "unknown", "requested"}:
             status = "scheduled"
 
@@ -612,14 +613,14 @@ def _normalize_to_schema(raw: dict[str, Any], ocr: dict[str, Any], pdf_name: str
             ),
             "admission_datetime": admit_dt,
             "discharge_datetime": discharge_dt,
-            "disposition": str(_pick(raw.get("encounter", {}), "disposition", default="home")),
+            "disposition": str(_pick(raw.get("encounter", {}), "disposition", default="home")).strip().lower().replace(" ", "_"),
         },
         "clinical_episode": {
             "reason_for_hospitalization": str(reason_for_hospitalization),
             "primary_diagnosis": str(primary_diag),
             "secondary_diagnoses": diag_list[1:] if len(diag_list) > 1 else [],
             "hospital_course_summary": str(hospital_course_summary),
-            "discharge_condition": str(_pick(clinical, "discharge_condition", default="improving" if "discharged" in str(hospital_course_summary).lower() else "unknown")),
+            "discharge_condition": str(_pick(clinical, "discharge_condition", default="improving" if "discharged" in str(hospital_course_summary).lower() else "unknown")).strip().lower(),
         },
         "medications": {
             "discharge_medications": meds,
