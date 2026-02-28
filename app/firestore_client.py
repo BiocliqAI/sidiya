@@ -523,3 +523,92 @@ def update_extraction(extraction_id: str, data: dict[str, Any]) -> None:
     db = _get_db()
     data["updated_at"] = _now_utc()
     db.collection("extractions").document(extraction_id).update(data)
+
+
+# ---------------------------------------------------------------------------
+# Provider Notes  (clinical documentation per patient)
+# ---------------------------------------------------------------------------
+
+def save_provider_note(patient_id: str, data: dict[str, Any]) -> str:
+    """Save a provider clinical note for a patient."""
+    db = _get_db()
+    data.setdefault("created_at", _now_utc())
+    data.setdefault("author", "nurse")
+    _, doc_ref = (
+        db.collection("patients")
+        .document(patient_id)
+        .collection("provider_notes")
+        .add(data)
+    )
+    return doc_ref.id
+
+
+def get_provider_notes(patient_id: str, limit: int = 30) -> list[dict[str, Any]]:
+    """Get recent clinical notes for a patient, newest first."""
+    db = _get_db()
+    docs = (
+        db.collection("patients")
+        .document(patient_id)
+        .collection("provider_notes")
+        .order_by("created_at", direction=firestore.Query.DESCENDING)
+        .limit(max(1, min(limit, 200)))
+        .get()
+    )
+    results = []
+    for doc in docs:
+        d = doc.to_dict()
+        d["id"] = doc.id
+        created = d.get("created_at")
+        if hasattr(created, "isoformat"):
+            d["created_at"] = created.isoformat()
+        results.append(d)
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Enhanced Escalation Resolution
+# ---------------------------------------------------------------------------
+
+def resolve_escalation_with_details(
+    escalation_id: str,
+    resolution_type: str,
+    action_taken: str | None = None,
+    note: str | None = None,
+    resolved_by: str = "nurse",
+) -> None:
+    """Resolve an escalation with clinical context."""
+    db = _get_db()
+    data: dict[str, Any] = {
+        "status": "resolved",
+        "resolution_type": resolution_type,
+        "resolved_by": resolved_by,
+        "resolved_at": _now_utc(),
+    }
+    if action_taken:
+        data["action_taken"] = action_taken
+    if note:
+        data["resolution_note"] = note
+    db.collection("escalations").document(escalation_id).update(data)
+
+
+def get_all_escalations(
+    patient_id: str | None = None,
+    limit: int = 50,
+) -> list[dict[str, Any]]:
+    """Get both open and resolved escalations, newest first."""
+    db = _get_db()
+    query = db.collection("escalations").order_by("created_at", direction=firestore.Query.DESCENDING)
+    if patient_id:
+        query = query.where(filter=FieldFilter("patient_id", "==", patient_id))
+    docs = query.limit(max(1, min(limit, 200))).get()
+    results = []
+    for doc in docs:
+        d = doc.to_dict()
+        d["id"] = doc.id
+        # Serialize timestamps
+        for ts_field in ("created_at", "resolved_at"):
+            val = d.get(ts_field)
+            if hasattr(val, "isoformat"):
+                d[ts_field] = val.isoformat()
+        results.append(d)
+    return results

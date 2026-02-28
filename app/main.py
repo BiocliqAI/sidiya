@@ -561,10 +561,147 @@ def provider_alerts() -> dict:
 
 @app.post("/api/provider/alerts/{escalation_id}/ack")
 def acknowledge_alert(escalation_id: str) -> dict:
-    """Provider acknowledges an escalation."""
+    """Provider acknowledges an escalation (simple ack)."""
     from app import firestore_client as fdb
     fdb.resolve_escalation(escalation_id, "nurse_ack")
     return {"status": "resolved", "escalation_id": escalation_id}
+
+
+class AlertResolveRequest(BaseModel):
+    resolution_type: str  # "acknowledged" | "called_stable" | "called_needs_followup" | "called_caregiver" | "scheduled_visit" | "adjusted_care_plan" | "referred_ed"
+    action_taken: str | None = None
+    note: str | None = None
+
+
+@app.post("/api/provider/alerts/{escalation_id}/resolve")
+def resolve_alert_with_details(escalation_id: str, req: AlertResolveRequest) -> dict:
+    """Resolve escalation with clinical context: action taken, notes."""
+    from app import firestore_client as fdb
+    fdb.resolve_escalation_with_details(
+        escalation_id,
+        resolution_type=req.resolution_type,
+        action_taken=req.action_taken,
+        note=req.note,
+    )
+    return {"status": "resolved", "escalation_id": escalation_id}
+
+
+@app.get("/api/provider/stats")
+def provider_dashboard_stats() -> dict:
+    """Aggregate KPIs for the dashboard header."""
+    from app import firestore_client as fdb
+
+    patients = fdb.list_active_patients()
+    now = datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)
+    today_iso = now.strftime("%Y-%m-%d")
+
+    total_patients = len(patients)
+    total_score = 0.0
+    scored_count = 0
+    critical_count = 0
+    at_risk_count = 0
+    good_count = 0
+    meds_taken = 0
+    meds_expected = 0
+    weight_logged_count = 0
+
+    for p in patients:
+        pid = p["id"]
+        comp = fdb.get_daily_compliance(pid, today_iso)
+        if comp:
+            s = comp.get("compliance_score", 0)
+            total_score += s
+            scored_count += 1
+            meds_taken += comp.get("medications_taken", 0)
+            meds_expected += comp.get("medications_expected", 0)
+            if comp.get("weight_logged"):
+                weight_logged_count += 1
+        open_escs = fdb.get_open_escalations(pid)
+        alert_count = len(open_escs)
+        score = (comp or {}).get("compliance_score", 0)
+        if alert_count >= 3 or score < 0.3:
+            critical_count += 1
+        elif alert_count >= 1 or score < 0.6:
+            at_risk_count += 1
+        else:
+            good_count += 1
+
+    all_open = fdb.get_open_escalations()
+    critical_alerts = sum(1 for a in all_open if a.get("level", 0) >= 2)
+    warning_alerts = len(all_open) - critical_alerts
+
+    # Upcoming appointments in next 7 days
+    upcoming_appts = 0
+    for p in patients:
+        pid = p["id"]
+        try:
+            rules = fdb.get_reminder_rules(pid)
+            for r in rules:
+                if r.get("type") == "appointment":
+                    appt_dt = r.get("payload", {}).get("appointment_datetime")
+                    if appt_dt:
+                        try:
+                            dt = datetime.fromisoformat(appt_dt)
+                            if 0 <= (dt.date() - now.date()).days <= 7:
+                                upcoming_appts += 1
+                        except (ValueError, TypeError):
+                            pass
+        except Exception:
+            pass
+
+    return {
+        "total_patients": total_patients,
+        "avg_compliance": round(total_score / scored_count, 2) if scored_count else 0,
+        "open_alerts": len(all_open),
+        "critical_alerts": critical_alerts,
+        "warning_alerts": warning_alerts,
+        "upcoming_appointments": upcoming_appts,
+        "risk_distribution": {
+            "critical": critical_count,
+            "at_risk": at_risk_count,
+            "good": good_count,
+        },
+        "meds_taken": meds_taken,
+        "meds_expected": meds_expected,
+        "weight_logged_today": weight_logged_count,
+    }
+
+
+class ProviderNoteRequest(BaseModel):
+    note: str
+    note_type: str = "general"  # "general" | "call_log" | "care_plan_change" | "clinical_observation"
+    escalation_id: str | None = None
+
+
+@app.post("/api/provider/patient/{patient_id}/notes")
+def add_provider_note(patient_id: str, req: ProviderNoteRequest) -> dict:
+    """Add a clinical note for a patient."""
+    from app import firestore_client as fdb
+    _get_patient_or_404(patient_id)
+    note_id = fdb.save_provider_note(patient_id, {
+        "note": req.note,
+        "note_type": req.note_type,
+        "escalation_id": req.escalation_id,
+    })
+    return {"note_id": note_id}
+
+
+@app.get("/api/provider/patient/{patient_id}/notes")
+def get_provider_notes(patient_id: str, limit: int = 30) -> dict:
+    """Get clinical notes for a patient."""
+    from app import firestore_client as fdb
+    _get_patient_or_404(patient_id)
+    notes = fdb.get_provider_notes(patient_id, limit=min(limit, 200))
+    return {"notes": notes}
+
+
+@app.get("/api/provider/patient/{patient_id}/escalation-history")
+def patient_escalation_history(patient_id: str, limit: int = 30) -> dict:
+    """Get all escalations (open + resolved) for a patient."""
+    from app import firestore_client as fdb
+    _get_patient_or_404(patient_id)
+    history = fdb.get_all_escalations(patient_id=patient_id, limit=min(limit, 200))
+    return {"history": history}
 
 
 @app.get("/api/provider/patient/{patient_id}/vitals")
@@ -573,8 +710,14 @@ def provider_patient_vitals(patient_id: str, days: int = 7) -> dict:
     from app import firestore_client as fdb
     _get_patient_or_404(patient_id)
 
-    weight_logs = fdb.get_vitals_range(patient_id, "weight", days=min(days, 90))
-    bp_logs = fdb.get_vitals_range(patient_id, "bp", days=min(days, 90))
+    try:
+        weight_logs = fdb.get_vitals_range(patient_id, "weight", days=min(days, 90))
+    except Exception:
+        weight_logs = []
+    try:
+        bp_logs = fdb.get_vitals_range(patient_id, "bp", days=min(days, 90))
+    except Exception:
+        bp_logs = []
     compliance = fdb.get_compliance_range(patient_id, days=min(days, 90))
 
     return {
@@ -582,6 +725,50 @@ def provider_patient_vitals(patient_id: str, days: int = 7) -> dict:
         "weight": weight_logs,
         "bp": bp_logs,
         "compliance": compliance,
+    }
+
+
+@app.get("/api/provider/analytics")
+def provider_analytics() -> dict:
+    """Cohort-level analytics for the analytics tab."""
+    from app import firestore_client as fdb
+
+    patients = fdb.list_active_patients()
+    now = datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)
+
+    # 7-day compliance trend
+    daily_trend = []
+    for day_offset in range(6, -1, -1):
+        day = (now - timedelta(days=day_offset)).strftime("%Y-%m-%d")
+        day_scores = []
+        for p in patients:
+            comp = fdb.get_daily_compliance(p["id"], day)
+            if comp and "compliance_score" in comp:
+                day_scores.append(comp["compliance_score"])
+        avg = round(sum(day_scores) / len(day_scores), 2) if day_scores else 0
+        daily_trend.append({"date": day, "avg_compliance": avg, "patients_reporting": len(day_scores)})
+
+    # All escalations in last 7 days for resolution metrics
+    all_esc = fdb.get_all_escalations(limit=200)
+    cutoff = (now - timedelta(days=7)).isoformat()
+    recent_esc = [e for e in all_esc if (e.get("created_at") or "") >= cutoff]
+    resolved_count = sum(1 for e in recent_esc if e.get("status") == "resolved")
+    open_count = sum(1 for e in recent_esc if e.get("status") == "open")
+
+    # Alert type breakdown
+    trigger_counts: dict[str, int] = {}
+    for e in recent_esc:
+        t = e.get("trigger_type", "unknown")
+        trigger_counts[t] = trigger_counts.get(t, 0) + 1
+
+    return {
+        "compliance_trend": daily_trend,
+        "escalation_summary": {
+            "total_7d": len(recent_esc),
+            "resolved_7d": resolved_count,
+            "open": open_count,
+        },
+        "alert_type_breakdown": trigger_counts,
     }
 
 

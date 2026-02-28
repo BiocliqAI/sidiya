@@ -3,154 +3,300 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sidiya — Provider Dashboard</title>
+  <title>Sidiya — Clinical Command Center</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/app.css?v={{ v }}">
   <link rel="stylesheet" href="/static/provider.css?v={{ v }}">
 </head>
 <body>
-  <div class="provider-app">
-
-    <!-- Header -->
-    <header class="prov-header">
-      <div class="prov-header-left">
-        <h1 class="prov-brand">Sidiya</h1>
-        <span class="prov-subtitle">Provider Dashboard</span>
+  <div class="dash">
+    <!-- ═══════ Top Bar ═══════ -->
+    <header class="dash-topbar">
+      <div class="topbar-left">
+        <h1 class="topbar-brand">Sidiya</h1>
+        <span class="topbar-divider"></span>
+        <span class="topbar-title">Clinical Command Center</span>
       </div>
-      <div class="prov-header-right">
-        <a href="/" class="prov-link">Extractor</a>
-        <a href="/history" class="prov-link">History</a>
+      <nav class="topbar-tabs" role="tablist">
+        <button class="tab-btn active" data-tab="command" role="tab" aria-selected="true">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+          Command Center
+          <span class="tab-badge" id="tab-badge-alerts" hidden>0</span>
+        </button>
+        <button class="tab-btn" data-tab="onboarding" role="tab" aria-selected="false">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M1 8h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Patient Onboarding
+        </button>
+        <button class="tab-btn" data-tab="analytics" role="tab" aria-selected="false">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 14V8M6 14V4M10 14V6M14 14V2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Analytics
+        </button>
+      </nav>
+      <div class="topbar-right">
+        <a href="/" class="topbar-link">Extractor</a>
+        <a href="/history" class="topbar-link">History</a>
       </div>
     </header>
 
-    <!-- Alerts Banner -->
-    <section id="alerts-section" class="prov-section" hidden>
-      <div class="section-header">
-        <h2>Open Alerts</h2>
-        <span class="alert-count" id="alert-count">0</span>
+    <!-- ═══════════════════════════════════════════════════════════════
+         TAB 1: COMMAND CENTER
+         ═══════════════════════════════════════════════════════════════ -->
+    <div class="tab-panel active" id="panel-command">
+
+      <!-- KPI Stats Row -->
+      <div class="kpi-row" id="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-icon">👥</div>
+          <div class="kpi-data">
+            <div class="kpi-value" id="kpi-patients">—</div>
+            <div class="kpi-label">Active Patients</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">📊</div>
+          <div class="kpi-data">
+            <div class="kpi-value" id="kpi-compliance">—</div>
+            <div class="kpi-label">Avg Compliance</div>
+          </div>
+        </div>
+        <div class="kpi-card kpi-alerts">
+          <div class="kpi-icon">🚨</div>
+          <div class="kpi-data">
+            <div class="kpi-value" id="kpi-alerts-val">—</div>
+            <div class="kpi-label">Open Alerts</div>
+          </div>
+          <div class="kpi-sub" id="kpi-alerts-sub"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">📅</div>
+          <div class="kpi-data">
+            <div class="kpi-value" id="kpi-appts">—</div>
+            <div class="kpi-label">Appts (7 days)</div>
+          </div>
+        </div>
       </div>
-      <div id="alerts-list" class="alerts-list"></div>
-    </section>
 
-    <!-- ══════════ Upload & Register Flow ══════════ -->
-    <section class="prov-section">
-      <div class="section-header">
-        <h2>New Patient — Upload Discharge Summary</h2>
-      </div>
+      <!-- Two-pane layout: Alerts sidebar + Patient list -->
+      <div class="command-layout">
 
-      <!-- Step 1: Upload PDF -->
-      <div id="upload-step" class="glass-panel upload-panel">
-        <div class="upload-drop-zone" id="drop-zone">
-          <div class="upload-icon">📄</div>
-          <p class="upload-label">Drag &amp; drop a discharge summary PDF here</p>
-          <p class="upload-sublabel">or click to browse</p>
-          <input type="file" id="pdf-input" accept="application/pdf" hidden>
-        </div>
-        <div id="upload-status" class="upload-status" hidden>
-          <div class="upload-progress-bar"><div class="upload-progress-fill" id="progress-fill"></div></div>
-          <p id="upload-status-text">Processing...</p>
-        </div>
-      </div>
-
-      <!-- Step 2: Review Extraction + Register -->
-      <div id="review-step" class="glass-panel review-panel" hidden>
-        <div class="review-header">
-          <h3>Extraction Result</h3>
-          <button type="button" class="btn-small btn-outline" id="btn-new-upload">Upload Another</button>
-        </div>
-
-        <div class="review-summary" id="review-summary"></div>
-
-        <details class="review-details">
-          <summary>View Medications &amp; Care Plan</summary>
-          <div id="review-meds" class="review-meds"></div>
-          <div id="review-care-plan" class="review-care-plan"></div>
-        </details>
-
-        <div class="review-links" id="review-links">
-          <a id="review-link-careplan" class="prov-link" href="#" target="_blank">Full Care Plan</a>
-          <a id="review-link-calendar" class="prov-link" href="#" target="_blank">90-Day Calendar</a>
-          <a id="review-link-summary" class="prov-link" href="#" target="_blank">Summary Page</a>
-        </div>
-
-        <hr class="divider">
-
-        <h3 class="register-title">Register Patient for Reminders</h3>
-        <form id="register-form" class="register-form">
-          <input type="hidden" id="reg-extraction-id" value="">
-          <div class="form-row">
-            <div class="form-field">
-              <label>Patient Phone</label>
-              <input type="tel" id="reg-phone" placeholder="+91 98765 43210" required>
-            </div>
-            <div class="form-field">
-              <label>Caregiver Phone</label>
-              <input type="tel" id="reg-caregiver-phone" placeholder="+91 98765 43210">
+        <!-- Left: Alert Sidebar -->
+        <aside class="alert-sidebar" id="alert-sidebar">
+          <div class="sidebar-header">
+            <h2 class="sidebar-title">Alert Queue</h2>
+            <div class="sidebar-filters">
+              <button class="filter-btn active" data-filter="all">All</button>
+              <button class="filter-btn" data-filter="critical">Critical</button>
+              <button class="filter-btn" data-filter="open">Unresolved</button>
             </div>
           </div>
-          <div class="form-row">
-            <div class="form-field">
-              <label>Nurse Phone</label>
-              <input type="tel" id="reg-nurse-phone" placeholder="+91 98765 43210">
-            </div>
-            <div class="form-field"></div>
+          <div class="alert-queue" id="alert-queue">
+            <div class="sidebar-empty">Loading alerts...</div>
           </div>
-          <button type="submit" class="btn-register">Register &amp; Create Reminders</button>
-          <p id="reg-feedback" class="reg-feedback" hidden></p>
-        </form>
-      </div>
-    </section>
+        </aside>
 
-    <!-- Recent Extractions -->
-    <section class="prov-section">
-      <div class="section-header">
-        <h2>Recent Extractions</h2>
-        <button id="btn-refresh-extractions" class="btn-refresh">Refresh</button>
+        <!-- Right: Patient cards -->
+        <main class="patient-main">
+          <div class="patient-main-header">
+            <h2 class="section-title">Patients</h2>
+            <div class="patient-search-wrap">
+              <input type="text" class="patient-search" id="patient-search" placeholder="Search patients...">
+            </div>
+            <button class="btn-icon" id="btn-refresh-cmd" title="Refresh">↻</button>
+          </div>
+          <div class="patient-grid" id="patient-grid">
+            <div class="sidebar-empty">Loading patients...</div>
+          </div>
+        </main>
       </div>
-      <div id="extractions-list" class="extractions-list">
-        <p class="empty-state">Loading...</p>
-      </div>
-    </section>
+    </div>
 
-    <!-- Patient List -->
-    <section class="prov-section">
-      <div class="section-header">
-        <h2>Patient Overview</h2>
-        <button id="btn-refresh" class="btn-refresh">Refresh</button>
-      </div>
-      <div id="patient-list" class="patient-list">
-        <p class="empty-state">Loading patients...</p>
-      </div>
-    </section>
+    <!-- ═══════════════════════════════════════════════════════════════
+         TAB 2: PATIENT ONBOARDING
+         ═══════════════════════════════════════════════════════════════ -->
+    <div class="tab-panel" id="panel-onboarding">
+      <div class="onboard-layout">
+        <!-- Wizard -->
+        <div class="onboard-wizard">
+          <div class="wizard-steps">
+            <div class="wizard-step active" data-step="1"><span class="step-num">1</span><span class="step-label">Upload</span></div>
+            <div class="wizard-connector"></div>
+            <div class="wizard-step" data-step="2"><span class="step-num">2</span><span class="step-label">Review</span></div>
+            <div class="wizard-connector"></div>
+            <div class="wizard-step" data-step="3"><span class="step-num">3</span><span class="step-label">Register</span></div>
+          </div>
 
-    <!-- Patient Detail Modal -->
-    <div id="patient-modal" class="modal" hidden>
-      <div class="modal-overlay"></div>
-      <div class="modal-content glass-panel">
-        <button class="modal-close" id="modal-close">&times;</button>
-        <h2 id="modal-patient-name">Patient</h2>
-        <p id="modal-patient-meta" class="modal-meta"></p>
+          <!-- Step 1: Upload -->
+          <div class="wizard-panel active" id="wiz-step-1">
+            <div class="upload-drop-zone" id="drop-zone">
+              <div class="upload-icon-large">
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path d="M24 32V16M24 16l-8 8M24 16l8 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 32v4a4 4 0 004 4h24a4 4 0 004-4v-4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+              </div>
+              <p class="upload-label">Drop discharge summary PDF here</p>
+              <p class="upload-sublabel">or click to browse files</p>
+              <input type="file" id="pdf-input" accept="application/pdf" hidden>
+            </div>
+            <div id="upload-progress" class="upload-progress" hidden>
+              <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+              <p class="progress-text" id="progress-text">Processing...</p>
+            </div>
+          </div>
 
-        <div class="modal-section">
+          <!-- Step 2: Review -->
+          <div class="wizard-panel" id="wiz-step-2">
+            <div class="review-card" id="review-card"></div>
+            <div class="review-expand">
+              <details class="review-details-block">
+                <summary>Medications &amp; Care Plan Details</summary>
+                <div id="review-meds"></div>
+                <div id="review-care-plan"></div>
+              </details>
+            </div>
+            <div class="review-nav">
+              <a id="link-careplan" class="review-link" href="#" target="_blank">Care Plan ↗</a>
+              <a id="link-calendar" class="review-link" href="#" target="_blank">Calendar ↗</a>
+              <a id="link-summary" class="review-link" href="#" target="_blank">Summary ↗</a>
+            </div>
+            <div class="wiz-actions">
+              <button type="button" class="btn-ghost" id="btn-wiz-back-1">← Upload Another</button>
+              <button type="button" class="btn-primary" id="btn-wiz-next-2">Continue to Register →</button>
+            </div>
+          </div>
+
+          <!-- Step 3: Register -->
+          <div class="wizard-panel" id="wiz-step-3">
+            <form id="register-form" class="register-form-grid">
+              <input type="hidden" id="reg-extraction-id">
+              <div class="rf-field">
+                <label>Patient Phone <span class="required">*</span></label>
+                <input type="tel" id="reg-phone" placeholder="+91 98765 43210" required>
+              </div>
+              <div class="rf-field">
+                <label>Caregiver Phone</label>
+                <input type="tel" id="reg-caregiver" placeholder="+91 98765 43210">
+              </div>
+              <div class="rf-field">
+                <label>Nurse Phone</label>
+                <input type="tel" id="reg-nurse" placeholder="+91 98765 43210">
+              </div>
+              <div class="rf-actions">
+                <button type="button" class="btn-ghost" id="btn-wiz-back-2">← Back</button>
+                <button type="submit" class="btn-primary">Register &amp; Create Reminders</button>
+              </div>
+              <p id="reg-feedback" class="rf-feedback" hidden></p>
+            </form>
+          </div>
+        </div>
+
+        <!-- Extraction History -->
+        <div class="onboard-history">
+          <div class="oh-header">
+            <h2 class="section-title">Extraction History</h2>
+            <button class="btn-icon" id="btn-refresh-ext">↻</button>
+          </div>
+          <div class="extraction-list" id="extraction-list">
+            <div class="sidebar-empty">Loading...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         TAB 3: ANALYTICS
+         ═══════════════════════════════════════════════════════════════ -->
+    <div class="tab-panel" id="panel-analytics">
+      <div class="analytics-grid">
+        <div class="analytics-card analytics-wide">
+          <h3 class="ac-title">7-Day Compliance Trend</h3>
+          <canvas id="chart-compliance" height="220"></canvas>
+        </div>
+        <div class="analytics-card">
+          <h3 class="ac-title">Risk Distribution</h3>
+          <canvas id="chart-risk" height="200"></canvas>
+          <div class="risk-legend" id="risk-legend"></div>
+        </div>
+        <div class="analytics-card">
+          <h3 class="ac-title">Alert Summary (7 days)</h3>
+          <div class="esc-summary" id="esc-summary"></div>
+          <h4 class="ac-subtitle">By Type</h4>
+          <div class="alert-breakdown" id="alert-breakdown"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ Inline Patient Detail (slides in from right) ═══════ -->
+    <div class="patient-detail-panel" id="patient-detail" hidden>
+      <div class="detail-header">
+        <button class="btn-icon detail-close" id="detail-close">✕</button>
+        <h2 class="detail-name" id="detail-name"></h2>
+        <p class="detail-meta" id="detail-meta"></p>
+      </div>
+      <div class="detail-body">
+        <div class="detail-section">
           <h3>Today's Actions</h3>
-          <div id="modal-today-actions"></div>
+          <div id="detail-today"></div>
         </div>
-
-        <div class="modal-section">
-          <h3>Weight Trend (7 days)</h3>
-          <canvas id="modal-weight-chart" height="180"></canvas>
+        <div class="detail-section">
+          <h3>Weight Trend</h3>
+          <canvas id="detail-weight-chart" height="160"></canvas>
         </div>
+        <div class="detail-section">
+          <h3>BP Trend</h3>
+          <canvas id="detail-bp-chart" height="160"></canvas>
+        </div>
+        <div class="detail-section">
+          <h3>7-Day Compliance</h3>
+          <div id="detail-compliance"></div>
+        </div>
+        <div class="detail-section">
+          <h3>Alert History</h3>
+          <div id="detail-escalations"></div>
+        </div>
+        <div class="detail-section">
+          <h3>Clinical Notes</h3>
+          <div id="detail-notes"></div>
+          <div class="add-note-form">
+            <textarea id="new-note-text" placeholder="Add a clinical note..." rows="2"></textarea>
+            <select id="new-note-type">
+              <option value="general">General Note</option>
+              <option value="call_log">Call Log</option>
+              <option value="clinical_observation">Clinical Observation</option>
+              <option value="care_plan_change">Care Plan Change</option>
+            </select>
+            <button class="btn-sm btn-primary" id="btn-add-note">Add Note</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-        <div class="modal-section">
-          <h3>Compliance (7 days)</h3>
-          <div id="modal-compliance"></div>
+    <!-- ═══════ Alert Action Drawer (slides up) ═══════ -->
+    <div class="alert-drawer" id="alert-drawer" hidden>
+      <div class="drawer-overlay" id="drawer-overlay"></div>
+      <div class="drawer-content">
+        <div class="drawer-header">
+          <h3 id="drawer-title">Resolve Alert</h3>
+          <button class="btn-icon" id="drawer-close">✕</button>
+        </div>
+        <div class="drawer-body">
+          <input type="hidden" id="drawer-esc-id">
+          <div class="drawer-actions">
+            <button class="da-btn" data-action="acknowledged">✓ Acknowledge Only</button>
+            <button class="da-btn" data-action="called_stable">📞 Called Patient — Stable</button>
+            <button class="da-btn" data-action="called_needs_followup">📞 Called — Needs Follow-up</button>
+            <button class="da-btn" data-action="called_caregiver">👨‍👩‍👦 Called Caregiver</button>
+            <button class="da-btn" data-action="scheduled_visit">📅 Scheduled Urgent Visit</button>
+            <button class="da-btn" data-action="adjusted_care_plan">📋 Adjusted Care Plan</button>
+            <button class="da-btn da-btn-danger" data-action="referred_ed">🏥 Referred to ED</button>
+          </div>
+          <div class="drawer-note">
+            <label>Clinical Note (optional)</label>
+            <textarea id="drawer-note-text" placeholder="Document your assessment..." rows="3"></textarea>
+          </div>
         </div>
       </div>
     </div>
 
   </div>
-
   <script src="/static/provider.js?v={{ v }}"></script>
 </body>
 </html>
